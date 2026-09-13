@@ -69,6 +69,11 @@ type SettingsData = {
   scripts: ScriptSnippet[];
   navbarDark: boolean;
   paymentMethods: PaymentMethod[];
+  ctaButtons: {
+    addToCart: { enabled: boolean; text: string; style: "pill" | "rectangle" };
+    call: { enabled: boolean; text: string; style: "pill" | "rectangle" };
+    whatsapp: { enabled: boolean; text: string; style: "pill" | "rectangle" };
+  };
 };
 
 const defaultSettings: SettingsData = {
@@ -113,6 +118,11 @@ const defaultSettings: SettingsData = {
   facebookPixelId: "",
   scripts: [],
   navbarDark: false,
+  ctaButtons: {
+    addToCart: { enabled: true, text: "Add To Cart", style: "pill" as const },
+    call: { enabled: true, text: "Call to Order", style: "pill" as const },
+    whatsapp: { enabled: true, text: "WhatsApp", style: "pill" as const },
+  },
   paymentMethods: [
     {
       id: "cash_on_delivery",
@@ -367,6 +377,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: "store", label: "Store" },
     { id: "shipping", label: "Delivery Cost" },
+    { id: "cta", label: "CTA Buttons" },
     { id: "appearance", label: "Appearance" },
     { id: "payments", label: "Payments" },
     { id: "scripts", label: "Scripts & Tracking" },
@@ -530,11 +541,11 @@ export default function SettingsPage() {
               </button>
             </div>
             {(settings.deliveryMethods || []).map((method, index) => (
-              <div key={method.id} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 space-y-3">
+              <div key={method.id} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 space-y-3 dark:border-neutral-700 dark:bg-neutral-800">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">Method {index + 1}</span>
+                  <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wide dark:text-neutral-400">Method {index + 1}</span>
                   <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-1.5 text-xs text-neutral-600 cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={method.enabled}
@@ -604,9 +615,73 @@ export default function SettingsPage() {
               </div>
             ))}
             {(!settings.deliveryMethods || settings.deliveryMethods.length === 0) && (
-              <p className="text-sm text-neutral-400 text-center py-4">No delivery methods yet. Add one above.</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4">No delivery methods yet. Add one above.</p>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === "cta" && (
+        <div className="space-y-6">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Control the Call-to-Action buttons shown on product pages. Changes apply to both mobile sticky bar and desktop layout.</p>
+          {(["addToCart", "call", "whatsapp"] as const).map((key) => {
+            const labels: Record<string, string> = { addToCart: "Add to Cart", call: "Call Button", whatsapp: "WhatsApp Button" };
+            const btn = settings.ctaButtons?.[key] || { enabled: true, text: "", style: "pill" };
+            return (
+              <div key={key} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3 dark:border-neutral-700 dark:bg-neutral-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">{labels[key]}</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Enabled</span>
+                    <input
+                      type="checkbox"
+                      checked={btn.enabled}
+                      onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, enabled: e.target.checked } })}
+                      className="h-4 w-4 rounded"
+                    />
+                  </label>
+                </div>
+                <div className="grid gap-3 grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Button Text</Label>
+                    <Input
+                      value={btn.text}
+                      onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, text: e.target.value } })}
+                      placeholder="Button label..."
+                      className="h-8 text-sm"
+                      disabled={!btn.enabled}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Shape</Label>
+                    <select
+                      value={btn.style}
+                      onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, style: e.target.value } })}
+                      disabled={!btn.enabled}
+                      className="h-8 w-full rounded-md border border-neutral-200 bg-white px-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    >
+                      <option value="pill">Pill (rounded)</option>
+                      <option value="rectangle">Rectangle (square)</option>
+                    </select>
+                  </div>
+                </div>
+                {/* Preview */}
+                {btn.enabled && (
+                  <div className="pt-1">
+                    <Label className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5 block">Preview</Label>
+                    <button
+                      type="button"
+                      className={`px-5 py-2 text-sm font-medium text-white ${
+                        key === "whatsapp" ? "bg-green-600" : key === "call" ? "bg-neutral-900" : "bg-blue-600"
+                      } ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"}`}
+                    >
+                      {btn.text || labels[key]}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

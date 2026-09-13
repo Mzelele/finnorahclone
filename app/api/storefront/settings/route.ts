@@ -21,6 +21,11 @@ export async function GET() {
       faviconUrl: "",
       metaTitle: "ACME Store",
       metaDescription: "",
+      ctaButtons: {
+        addToCart: { enabled: true, text: "Add To Cart", style: "pill" },
+        call: { enabled: true, text: "Call to Order", style: "pill" },
+        whatsapp: { enabled: true, text: "WhatsApp", style: "pill" },
+      },
       paymentMethods: [
         {
           id: "cash_on_delivery",

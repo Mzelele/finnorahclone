@@ -46,6 +46,11 @@ const defaultSettings = {
   scripts: [],
   // Navbar theme: false = light, true = dark
   navbarDark: false,
+  ctaButtons: {
+    addToCart: { enabled: true, text: "Add To Cart", style: "pill" },
+    call: { enabled: true, text: "Call to Order", style: "pill" },
+    whatsapp: { enabled: true, text: "WhatsApp", style: "pill" },
+  },
   paymentMethods: [
     {
       id: "cash_on_delivery",
