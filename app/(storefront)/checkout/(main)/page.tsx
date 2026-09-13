@@ -262,6 +262,15 @@ export default function CheckoutPage() {
           </div>
         ))}
       </div>
+      <div className="px-4 pb-1 pt-2">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("cart:item-added"))}
+          className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+        >
+          ← Edit Cart
+        </button>
+      </div>
       <div className="border-t border-neutral-200 bg-white px-4 py-3 space-y-1.5 text-sm">
         {settings.shippingNote && (
           <p className="text-xs text-neutral-500">{settings.shippingNote}</p>

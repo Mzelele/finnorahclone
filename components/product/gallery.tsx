@@ -36,7 +36,7 @@ export function Gallery({
                   {safeImages.map((image, index) => (
                     <button
                       key={index}
-                      type="button"
+                      type="submit"
                       formAction={() => {
                         const newState = updateImage(index.toString());
                         updateURL(newState);

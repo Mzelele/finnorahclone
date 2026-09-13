@@ -24,6 +24,22 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
+  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string }>({ shape: "rounded-full", weight: "font-semibold" });
+
+  useEffect(() => {
+    fetch("/api/storefront/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        const btn = data?.ctaButtons?.addToCart;
+        if (btn) {
+          setCtaStyle({
+            shape: btn.style === "rectangle" ? "rounded-[4px]" : "rounded-full",
+            weight: btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -95,10 +111,10 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
             leaveTo="translate-x-full"
           >
             <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col border-l border-neutral-200 text-neutral-900 md:w-[420px]" style={{ backgroundColor: "#EEF4F8" }}>
-              {/* Header with bottom border */}
-              <div className={"border-b border-neutral-200/80 px-5 py-4 md:px-7" + (navbarDark ? " border-neutral-700 bg-black" : "")}>
-                <div className="flex items-center justify-between">
-                  <p className={navbarDark ? "text-base font-bold text-white" : "text-base font-bold text-neutral-900"}>
+              {/* Header — matches main navbar height, shadow and dark/light styling */}
+              <div className={`border-b px-3 py-2 shadow-md md:px-6 md:py-3 ${navbarDark ? "border-neutral-700 bg-black" : "border-neutral-200 bg-white"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm font-bold md:text-base ${navbarDark ? "text-white" : "text-neutral-900"}`}>
                     My Cart
                     {cart && cart.lines.length > 0 ? (
                       <span className="ml-1.5 font-normal text-neutral-500">· {cart.totalQuantity} {cart.totalQuantity === 1 ? "item" : "items"}</span>
@@ -121,7 +137,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                   <Link
                     href="/shop"
                     onClick={closeCart}
-                    className="mt-6 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className={`mt-6 bg-blue-600 px-6 py-3 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
                   >
                     Continue Shopping
                   </Link>
@@ -189,12 +205,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                             className="flex w-full flex-col rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-100 md:p-4"
                           >
                             <div className="relative flex w-full flex-row justify-between">
-                              <div className="absolute z-40 -left-1.5 -top-1.5">
-                                <DeleteItemButton
-                                  item={item}
-                                  optimisticUpdate={updateCartItem}
-                                />
-                              </div>
+  
                               <div className="flex min-w-0 flex-1 flex-row gap-3">
                                 <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-neutral-200 bg-white md:h-24 md:w-24">
                                   <Image
@@ -240,7 +251,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                                   ) : null}
                                 </Link>
                               </div>
-                              <div className="flex h-20 flex-col justify-between md:h-24">
+                              <div className="flex h-20 flex-col items-end justify-between md:h-24">
                                 <Price
                                   className="flex justify-end text-right text-sm font-semibold text-neutral-900"
                                   amount={item.cost.totalAmount.amount}
@@ -265,6 +276,10 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                                     optimisticUpdate={updateCartItem}
                                   />
                                 </div>
+                                <DeleteItemButton
+                                  item={item}
+                                  optimisticUpdate={updateCartItem}
+                                />
                               </div>
                             </div>
                           </li>
@@ -285,7 +300,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                     <div className="my-4 border-t border-neutral-200" />
                                         <button
                                           onClick={handleCheckout}
-                                          className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                                          className={`flex w-full items-center justify-center gap-2 bg-blue-600 px-5 py-3.5 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
                                         >
                                           <Lock className="h-4 w-4" />
                                           Proceed to Checkout

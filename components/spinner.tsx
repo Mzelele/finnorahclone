@@ -30,10 +30,10 @@ export function Spinner({ size = "md", className, text }: SpinnerProps) {
   );
 }
 
-/** Full-page centered spinner — use this in your loading.tsx files */
+/** Content-area centered spinner — use this in your loading.tsx files */
 export function PageSpinner({ text = "Loading…" }: { text?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[1px]">
+    <div className="flex min-h-[40vh] w-full flex-col items-center justify-center py-20">
       <div className="flex flex-col items-center gap-4">
         <div className="h-12 w-12 animate-spin rounded-full border-[4px] border-blue-600 border-t-transparent" />
         <p className="text-sm font-medium text-neutral-500 animate-pulse">
