@@ -70,9 +70,9 @@ type SettingsData = {
   navbarDark: boolean;
   paymentMethods: PaymentMethod[];
   ctaButtons: {
-    addToCart: { enabled: boolean; text: string; style: "pill" | "rectangle" };
-    call: { enabled: boolean; text: string; style: "pill" | "rectangle" };
-    whatsapp: { enabled: boolean; text: string; style: "pill" | "rectangle" };
+    addToCart: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    call: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    whatsapp: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
   };
 };
 
@@ -119,9 +119,9 @@ const defaultSettings: SettingsData = {
   scripts: [],
   navbarDark: false,
   ctaButtons: {
-    addToCart: { enabled: true, text: "Add To Cart", style: "pill" as const },
-    call: { enabled: true, text: "Call to Order", style: "pill" as const },
-    whatsapp: { enabled: true, text: "WhatsApp", style: "pill" as const },
+    addToCart: { enabled: true, text: "Add To Cart", style: "pill" as const, fontWeight: "bold" as const },
+    call: { enabled: true, text: "Call to Order", style: "pill" as const, fontWeight: "semibold" as const },
+    whatsapp: { enabled: true, text: "WhatsApp", style: "pill" as const, fontWeight: "semibold" as const },
   },
   paymentMethods: [
     {
@@ -641,7 +641,7 @@ export default function SettingsPage() {
                     />
                   </label>
                 </div>
-                <div className="grid gap-3 grid-cols-2">
+                <div className="grid gap-3 grid-cols-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Button Text</Label>
                     <Input
@@ -664,6 +664,19 @@ export default function SettingsPage() {
                       <option value="rectangle">Rectangle (square)</option>
                     </select>
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Font Weight</Label>
+                    <select
+                      value={btn.fontWeight || "semibold"}
+                      onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, fontWeight: e.target.value } })}
+                      disabled={!btn.enabled}
+                      className="h-8 w-full rounded-md border border-neutral-200 bg-white px-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    >
+                      <option value="normal">Regular</option>
+                      <option value="semibold">Semi-bold</option>
+                      <option value="bold">Bold</option>
+                    </select>
+                  </div>
                 </div>
                 {/* Preview */}
                 {btn.enabled && (
@@ -671,9 +684,11 @@ export default function SettingsPage() {
                     <Label className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5 block">Preview</Label>
                     <button
                       type="button"
-                      className={`px-5 py-2 text-sm font-medium text-white ${
+                      className={`px-5 py-2 text-sm text-white ${
                         key === "whatsapp" ? "bg-green-600" : key === "call" ? "bg-neutral-900" : "bg-blue-600"
-                      } ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"}`}
+                      } ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"} ${
+                        btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold"
+                      }`}
                     >
                       {btn.text || labels[key]}
                     </button>

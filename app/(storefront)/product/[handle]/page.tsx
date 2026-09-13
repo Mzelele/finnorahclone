@@ -216,6 +216,7 @@ export default async function ProductPage(props: {
                       product={product}
                       whatsappPhone={settings.whatsappPhone || settings.storePhone}
                       storePhone={settings.storePhone}
+                      ctaButtons={settings.ctaButtons}
                     />
                   </Suspense>
                 </div>
@@ -545,6 +546,7 @@ export default async function ProductPage(props: {
                                                                                                                       product={product}
                                                                                                                       whatsappPhone={settings.whatsappPhone || settings.storePhone}
                                                                                                                       storePhone={settings.storePhone}
+                                                                                                                      ctaButtons={settings.ctaButtons}
                                                                                                                     />
                                                                                                                   </Suspense>
                                                                                                                 </div>
