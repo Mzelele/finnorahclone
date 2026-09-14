@@ -1,15 +1,8 @@
 import type { WooProduct } from "@/models/productSchema";
 import Papa from "papaparse";
 
-// ── Constants ─────────────────────────────────────────────────────────
-
-/** Number of attribute column groups to scan (1‑based, so 6 → Attribute 1 … Attribute 6) */
 const MAX_ATTRIBUTES = 6;
 
-/**
- * Direct field‑to‑header mapping for WebToffee CSV columns.
- * The camelCase key is the model field path; the value is the exact CSV column header.
- */
 const FIELD_TO_HEADER: Record<string, string> = {
   id: "ID",
   type: "Type",
@@ -52,14 +45,11 @@ const FIELD_TO_HEADER: Record<string, string> = {
   position: "Position",
 };
 
-/**
- * Header‑to‑field mapping for the **real** WebToffee CSV export format.
- * These are the column headers exported natively by the WebToffee plugin.
- */
+// WordPress/WooCommerce native export + WebToffee real format
 const REAL_WEBTOFFEE_HEADER_TO_FIELD: Record<string, string> = {
   post_title: "name",
   sku: "sku",
-  parent_sku: "parentID",
+  parent_sku: "parent",
   id: "id",
   post_content: "description",
   post_excerpt: "shortDescription",
@@ -95,92 +85,88 @@ const REAL_WEBTOFFEE_HEADER_TO_FIELD: Record<string, string> = {
   crosssell_ids: "crossSells",
   children: "groupedProducts",
   post_name: "slug",
+  // WooCommerce native export columns
+  "Type": "type",
+  "SKU": "sku",
+  "Name": "name",
+  "Published": "published",
+  "Is featured?": "isFeatured",
+  "Visibility in catalog": "visibility",
+  "Short description": "shortDescription",
+  "Description": "description",
+  "Date sale price starts": "dateOnSaleFrom",
+  "Date sale price ends": "dateOnSaleTo",
+  "Tax status": "taxStatus",
+  "Tax class": "taxClass",
+  "In stock?": "inStock",
+  "Stock": "stock",
+  "Low stock amount": "lowStockAmount",
+  "Backorders allowed?": "backordersAllowed",
+  "Sold individually?": "soldIndividually",
+  "Weight (kg)": "weight",
+  "Length (cm)": "dimensions.length",
+  "Width (cm)": "dimensions.width",
+  "Height (cm)": "dimensions.height",
+  "Allow customer reviews?": "allowReviews",
+  "Purchase note": "purchaseNote",
+  "Regular price": "regularPrice",
+  "Sale price": "salePrice",
+  "Categories": "categories",
+  "Tags": "tags",
+  "Shipping class": "shippingClass",
+  "Images": "images",
+  "Download limit": "downloadLimit",
+  "Download expiry days": "downloadExpiryDays",
+  "Parent": "parent",
+  "Grouped products": "groupedProducts",
+  "Upsells": "upsells",
+  "Cross-sells": "crossSells",
+  "External URL": "externalUrl",
+  "Button text": "buttonText",
+  "Position": "position",
 };
 
-// Invert the mapping for header‑to‑field lookups
 const HEADER_TO_FIELD: Record<string, string> = {};
 for (const [field, header] of Object.entries(FIELD_TO_HEADER)) {
   HEADER_TO_FIELD[header] = field;
 }
 
-/**
- * Top‑level fields that are boolean ("1" ↔ true).
- * Attribute booleans and meta fields are handled separately.
- */
 const BOOLEAN_FIELDS = new Set<string>([
-  "isFeatured",
-  "inStock",
-  "backordersAllowed",
-  "soldIndividually",
-  "allowReviews",
+  "isFeatured", "inStock", "backordersAllowed", "soldIndividually", "allowReviews",
 ]);
 
-/**
- * Real WebToffee format fields that need special string‑to‑boolean conversion.
- * "instock" → true, "outofstock" → false; "yes"/"notify" → true, etc.
- */
-const REAL_BOOLEAN_FIELDS = new Set<string>(["inStock", "backordersAllowed", "soldIndividually"]);
-
-/** Fields whose CSV value is pipe‑separated (`|`) */
 const PIPE_SEPARATED_FIELDS = new Set<string>([
-  "categories",
-  "tags",
-  "images",
-  "groupedProducts",
-  "upsells",
-  "crossSells",
+  "categories", "tags", "images", "groupedProducts", "upsells", "crossSells",
 ]);
 
-/** Fields that should be parsed as numbers */
 const NUMBER_FIELDS = new Set<string>([
-  "published",
-  "stock",
-  "lowStockAmount",
-  "weight",
-  "regularPrice",
-  "salePrice",
-  "downloadLimit",
-  "downloadExpiryDays",
-  "position",
+  "published", "stock", "lowStockAmount", "weight",
+  "regularPrice", "salePrice", "downloadLimit", "downloadExpiryDays", "position",
 ]);
 
-// ── Helpers ───────────────────────────────────────────────────────────
-
-/** Split a pipe‑separated WebToffee value into an array of trimmed strings. */
 function splitPipe(value: string): string[] {
   if (!value || !value.trim()) return [];
-  return value
-    .split("|")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return value.split("|").map((s) => s.trim()).filter(Boolean);
 }
 
-/** Join an array back into the `|` format used by WebToffee. */
 function joinPipe(arr: string[]): string {
   return (arr ?? []).join("|");
 }
 
-/** Convert a WebToffee boolean string ("1" / "0") to a JS boolean. */
 function toBool(val: string): boolean {
   return val === "1";
 }
 
-/** Convert a JS boolean back to WebToffee format. */
 function fromBool(val: boolean): string {
   return val ? "1" : "0";
 }
 
-/** Safely parse a number; returns 0 for empty/invalid strings. */
 function toNumber(val: string | undefined): number {
   if (!val || val.trim() === "") return 0;
   const n = parseFloat(val);
   return Number.isNaN(n) ? 0 : n;
 }
 
-/**
- * Return all unique meta‑data keys across a set of products.
- * Used when generating CSV so every product row includes every Meta column.
- */
 function collectAllMetaKeys(products: WooProduct[]): string[] {
   const keySet = new Set<string>();
   for (const p of products) {
@@ -191,16 +177,31 @@ function collectAllMetaKeys(products: WooProduct[]): string[] {
   return Array.from(keySet).sort();
 }
 
-// ── Parse: CSV → Products ─────────────────────────────────────────────
-
 /**
- * Parse a raw WebToffee WooCommerce product CSV string and return an array
- * of WooProduct objects.
- *
- * Skips any row where `sku` is empty.
+ * Detect CSV format by inspecting headers.
+ * Returns 'native' for WordPress/WooCommerce native export,
+ * 'webtoffee' for real WebToffee snake_case format,
+ * 'standard' for the standard WebToffee-style format.
  */
+function detectFormat(fields: string[]): "native" | "webtoffee" | "standard" {
+  const normalized = fields.map((f) => f.replace(/^\uFEFF/, "").trim());
+  // WooCommerce native export: has both "Name" and "SKU" as headers
+  if (normalized.includes("Name") && normalized.includes("SKU")) return "native";
+  // Real WebToffee snake_case: has post_title
+  if (normalized.includes("post_title")) return "webtoffee";
+  return "standard";
+}
+
+function realToBool(val: string, field: string): boolean {
+  const lower = val.toLowerCase().trim();
+  if (field === "inStock") return lower === "instock" || lower === "1";
+  if (field === "backordersAllowed") return lower === "yes" || lower === "notify" || lower === "1";
+  if (field === "soldIndividually") return lower === "yes" || lower === "1";
+  if (field === "isFeatured" || field === "allowReviews") return lower === "1" || lower === "yes";
+  return lower === "1";
+}
+
 export function parseWebToffeeCSV(fileContent: string): WooProduct[] {
-  // Strip UTF-8 BOM if present before parsing
   const cleanContent = fileContent.replace(/^\uFEFF/, "");
 
   const result = Papa.parse<Record<string, string>>(cleanContent, {
@@ -213,129 +214,105 @@ export function parseWebToffeeCSV(fileContent: string): WooProduct[] {
     console.warn("CSV parse warnings:", result.errors);
   }
 
-  // ── Detect which format this CSV is by checking for known headers ──
-  const firstField = (result.meta.fields?.[0] ?? "").replace(/^\uFEFF/, "").trim();
-  const isRealWebToffee =
-    firstField === "post_title" ||
-    result.meta.fields?.includes("post_title") ||
-    result.meta.fields?.includes("sku") ||
-    result.meta.fields?.some((f) => f.replace(/^\uFEFF/, "") === "post_title");
-  const isStandardFormat =
-    result.meta.fields?.includes("Name") || result.meta.fields?.includes("SKU");
+  const fields = (result.meta.fields ?? []).map((f) => f.replace(/^\uFEFF/, "").trim());
+  const format = detectFormat(fields);
 
-  // Use the appropriate header mapping
-  const activeHeaderMap = isRealWebToffee
-    ? REAL_WEBTOFFEE_HEADER_TO_FIELD
-    : HEADER_TO_FIELD;
+  console.log("Detected CSV format:", format, "| Headers:", fields.slice(0, 8));
+
+  // Choose the right header→field mapping
+  const activeHeaderMap: Record<string, string> =
+    format === "standard" ? HEADER_TO_FIELD : REAL_WEBTOFFEE_HEADER_TO_FIELD;
+
+  const isRealWebToffee = format === "webtoffee";
+  const isNative = format === "native";
 
   const rows = result.data;
   const products: WooProduct[] = [];
 
   for (const row of rows) {
-    // Skip rows without a SKU
-    const skuVal =
-      (row["SKU"] ?? row["sku"] ?? "").trim();
+    // Find SKU — works for all three formats
+    const skuVal = (
+      row["SKU"] ?? row["sku"] ?? row["post_name"] ?? ""
+    ).trim();
     if (!skuVal) continue;
 
-    // ── Build the product object ──
     const product: Record<string, unknown> = {};
 
-    // Map direct fields
-    for (const [header, val] of Object.entries(row)) {
+    for (const [rawHeader, val] of Object.entries(row)) {
+      const header = rawHeader.replace(/^\uFEFF/, "").trim();
       const fieldPath = activeHeaderMap[header];
       if (!fieldPath) continue;
 
       const trimmedVal = val.trim();
       if (trimmedVal === "") continue;
 
-      // Type conversions
-      if (BOOLEAN_FIELDS.has(fieldPath)) {
-        // Standard format: "1"/"0"
-        product[fieldPath] = toBool(trimmedVal);
-      } else if (REAL_BOOLEAN_FIELDS.has(fieldPath) && isRealWebToffee) {
-        // Real WebToffee format: convert string values
+      if (isRealWebToffee && BOOLEAN_FIELDS.has(fieldPath)) {
         product[fieldPath] = realToBool(trimmedVal, fieldPath);
-      } else if (NUMBER_FIELDS.has(fieldPath) || fieldPath.startsWith("dimensions.")) {
-        if (fieldPath === "published") {
-          // published: map "publish" or "Published" → 1, else 0 (real format)
-          // or standard format: already numeric
+      } else if (isNative && BOOLEAN_FIELDS.has(fieldPath)) {
+        // WooCommerce native uses "1"/"0"
+        product[fieldPath] = toBool(trimmedVal);
+      } else if (BOOLEAN_FIELDS.has(fieldPath)) {
+        product[fieldPath] = toBool(trimmedVal);
+      } else if (fieldPath === "published") {
+        if (isRealWebToffee) {
           product[fieldPath] =
-            trimmedVal.toLowerCase() === "publish" || trimmedVal.toLowerCase() === "published" ? 1 : isRealWebToffee ? 0 : parseInt(trimmedVal, 10) || 1;
+            trimmedVal.toLowerCase() === "publish" || trimmedVal.toLowerCase() === "published" ? 1 : 0;
         } else {
-          product[fieldPath] = toNumber(trimmedVal);
+          product[fieldPath] = parseInt(trimmedVal, 10) || 1;
         }
+      } else if (NUMBER_FIELDS.has(fieldPath)) {
+        product[fieldPath] = toNumber(trimmedVal);
+      } else if (fieldPath.startsWith("dimensions.")) {
+        product[fieldPath] = toNumber(trimmedVal);
       } else if (PIPE_SEPARATED_FIELDS.has(fieldPath)) {
-        product[fieldPath] = splitPipe(trimmedVal);
+        // WooCommerce native uses comma-separated categories; WebToffee uses pipe
+        if ((isNative) && (fieldPath === "categories" || fieldPath === "tags")) {
+          product[fieldPath] = trimmedVal.split(",").map((s) => s.trim()).filter(Boolean);
+        } else {
+          product[fieldPath] = splitPipe(trimmedVal);
+        }
       } else {
         product[fieldPath] = trimmedVal;
       }
     }
 
-    // ── Fallback: use post_name as SKU if sku is empty ──
-    if (!product.sku) {
-      product.sku = row["post_name"]?.trim() || row["ID"]?.trim() || "";
-    }
+    // Ensure SKU is set
+    if (!product.sku) product.sku = skuVal;
 
-    // ── Dimensions nested object ──
-    if (isRealWebToffee) {
-      // Real WebToffee: individual length/width/height columns mapped via header map
-      const dLength = product["dimensions.length"] as number | undefined;
-      const dWidth = product["dimensions.width"] as number | undefined;
-      const dHeight = product["dimensions.height"] as number | undefined;
-      if (dLength !== undefined || dWidth !== undefined || dHeight !== undefined) {
-        product["dimensions"] = {
-          length: dLength ?? 0,
-          width: dWidth ?? 0,
-          height: dHeight ?? 0,
-        };
-      }
-      delete product["dimensions.length"];
-      delete product["dimensions.width"];
-      delete product["dimensions.height"];
-    } else {
-      // Standard format: "Length (cm)", "Width (cm)", "Height (cm)" columns
-      const length = toNumber(row["Length (cm)"]);
-      const width = toNumber(row["Width (cm)"]);
-      const height = toNumber(row["Height (cm)"]);
-      if (length || width || height) {
-        product["dimensions"] = { length, width, height };
-      }
+    // Build nested dimensions object
+    const dLength = product["dimensions.length"] as number | undefined;
+    const dWidth = product["dimensions.width"] as number | undefined;
+    const dHeight = product["dimensions.height"] as number | undefined;
+    if (dLength !== undefined || dWidth !== undefined || dHeight !== undefined) {
+      product["dimensions"] = {
+        length: dLength ?? 0,
+        width: dWidth ?? 0,
+        height: dHeight ?? 0,
+      };
     }
+    delete product["dimensions.length"];
+    delete product["dimensions.width"];
+    delete product["dimensions.height"];
 
-    // ── Attributes (dynamic, up to MAX_ATTRIBUTES) ──
+    // Attributes
     const attrs: WooProduct["attributes"] = [];
     if (isRealWebToffee) {
-      // Real WebToffee format uses "pa_" prefixed columns for attributes
-      // We'll scan for any column starting with "attribute:pa_"
-      const attrNames = new Set<string>();
       for (const col of Object.keys(row)) {
         const match = col.match(/^attribute:(pa_.+)$/);
         if (match) {
-          attrNames.add(match[1]!);
+          const value = (row[col] ?? "").trim();
+          if (!value) continue;
+          attrs.push({ name: match[1]!, value, visible: true, global: true });
         }
       }
-      for (const attrName of attrNames) {
-        const value =
-          (row[`attribute:${attrName}`] ?? "").trim();
-        if (!value) continue;
-        attrs.push({
-          name: attrName,
-          value,
-          visible: true,
-          global: true,
-        });
-      }
     } else {
+      // Standard + native WooCommerce both use "Attribute N name" columns
       for (let i = 1; i <= MAX_ATTRIBUTES; i++) {
         const name = (row[`Attribute ${i} name`] ?? "").trim();
         const value = (row[`Attribute ${i} value(s)`] ?? "").trim();
-
-        // Skip if both name and value are empty
         if (!name && !value) continue;
-
         const visibleRaw = (row[`Attribute ${i} visible`] ?? "").trim();
         const globalRaw = (row[`Attribute ${i} global`] ?? "").trim();
-
         attrs.push({
           name,
           value,
@@ -346,37 +323,22 @@ export function parseWebToffeeCSV(fileContent: string): WooProduct[] {
     }
     product["attributes"] = attrs;
 
-    // ── Meta‑data ──
+    // Meta data
     const metaData: WooProduct["metaData"] = [];
-    if (isRealWebToffee) {
-      // Real WebToffee format: columns starting with "meta:"
-      for (const [col, val] of Object.entries(row)) {
-        if (
-          col.startsWith("meta:") &&
-          !REAL_WEBTOFFEE_HEADER_TO_FIELD[col] &&
-          val.trim() !== ""
-        ) {
-          const key = col.slice("meta:".length);
-          metaData.push({ key, value: val.trim() });
-        }
-      }
-    } else {
-      // Standard format: columns starting with "Meta: "
-      for (const [col, val] of Object.entries(row)) {
-        if (col.startsWith("Meta: ") && val.trim() !== "") {
-          const key = col.slice("Meta: ".length).trim();
-          metaData.push({ key, value: val.trim() });
-        }
+    for (const [col, val] of Object.entries(row)) {
+      if (col.startsWith("meta:") && val.trim() !== "") {
+        metaData.push({ key: col.slice(5), value: val.trim() });
+      } else if (col.startsWith("Meta: ") && val.trim() !== "") {
+        metaData.push({ key: col.slice(6).trim(), value: val.trim() });
       }
     }
     product["metaData"] = metaData;
 
-    // Ensure arrays exist even for empty fields
+    // Ensure array fields exist
     for (const field of PIPE_SEPARATED_FIELDS) {
-      if (!Array.isArray(product[field])) {
-        product[field] = [];
-      }
+      if (!Array.isArray(product[field])) product[field] = [];
     }
+    if (!Array.isArray(product["attributes"])) product["attributes"] = [];
 
     products.push(product as unknown as WooProduct);
   }
@@ -384,40 +346,11 @@ export function parseWebToffeeCSV(fileContent: string): WooProduct[] {
   return products;
 }
 
-/**
- * Convert a real WebToffee string value to boolean.
- * "instock" / "yes" / "notify" → true; everything else → false
- */
-function realToBool(val: string, field: string): boolean {
-  const lower = val.toLowerCase().trim();
-  if (field === "inStock") {
-    return lower === "instock";
-  }
-  if (field === "backordersAllowed") {
-    return lower === "yes" || lower === "notify";
-  }
-  if (field === "soldIndividually") {
-    return lower === "yes";
-  }
-  return lower === "1" ? true : false;
-}
-
-// ── Generate: Products → CSV ──────────────────────────────────────────
-
-/**
- * Convert an array of WooProduct objects back to a WebToffee‑compatible CSV string.
- *
- * Always outputs all 6 attribute groups (even if empty) and includes every
- * unique Meta key discovered across the dataset.
- */
 export function generateWebToffeeCSV(products: WooProduct[]): string {
-  // Collect all unique meta keys so every row has the same columns
   const metaKeys = collectAllMetaKeys(products);
 
-  // Build header order (matching WebToffee's conventional order)
   const orderedHeaders: string[] = [];
 
-  // 1. Standard mapped fields in order
   const standardFields = [
     "id", "type", "sku", "name", "published", "isFeatured", "visibility",
     "shortDescription", "description", "dateOnSaleFrom", "dateOnSaleTo",
@@ -430,11 +363,8 @@ export function generateWebToffeeCSV(products: WooProduct[]): string {
     "groupedProducts", "upsells", "crossSells",
     "externalUrl", "buttonText", "position",
   ];
-  orderedHeaders.push(
-    ...standardFields.map((f) => FIELD_TO_HEADER[f] ?? f),
-  );
+  orderedHeaders.push(...standardFields.map((f) => FIELD_TO_HEADER[f] ?? f));
 
-  // 2. Attribute columns (1‑6) — always output all 6 groups even if empty
   for (let i = 1; i <= MAX_ATTRIBUTES; i++) {
     orderedHeaders.push(`Attribute ${i} name`);
     orderedHeaders.push(`Attribute ${i} value(s)`);
@@ -442,37 +372,26 @@ export function generateWebToffeeCSV(products: WooProduct[]): string {
     orderedHeaders.push(`Attribute ${i} global`);
   }
 
-  // 3. Meta columns
   for (const key of metaKeys) {
     orderedHeaders.push(`Meta: ${key}`);
   }
 
-  // Transform each product into a CSV row object keyed by WebToffee header
   const dataRows: Record<string, string>[] = products.map((p) => {
     const row: Record<string, string> = {};
 
-    // Standard fields
     for (const field of standardFields) {
       const header = FIELD_TO_HEADER[field];
       if (!header) continue;
 
       let val: unknown;
-
-      // Handle nested dimensions
-      if (field === "dimensions.length") {
-        val = p.dimensions?.length ?? 0;
-      } else if (field === "dimensions.width") {
-        val = p.dimensions?.width ?? 0;
-      } else if (field === "dimensions.height") {
-        val = p.dimensions?.height ?? 0;
-      } else {
-        val = (p as unknown as Record<string, unknown>)[field];
-      }
+      if (field === "dimensions.length") val = p.dimensions?.length ?? 0;
+      else if (field === "dimensions.width") val = p.dimensions?.width ?? 0;
+      else if (field === "dimensions.height") val = p.dimensions?.height ?? 0;
+      else val = (p as unknown as Record<string, unknown>)[field];
 
       row[header] = formatCellValue(field, val);
     }
 
-    // Attributes — always output all 6 groups
     for (let i = 0; i < MAX_ATTRIBUTES; i++) {
       const attr = (p.attributes ?? [])[i];
       const idx = i + 1;
@@ -482,7 +401,6 @@ export function generateWebToffeeCSV(products: WooProduct[]): string {
       row[`Attribute ${idx} global`] = attr !== undefined ? fromBool(attr.global) : "";
     }
 
-    // Meta
     for (const key of metaKeys) {
       const entry = (p.metaData ?? []).find((m) => m.key === key);
       row[`Meta: ${key}`] = entry?.value ?? "";
@@ -493,32 +411,14 @@ export function generateWebToffeeCSV(products: WooProduct[]): string {
 
   return Papa.unparse(
     { fields: orderedHeaders, data: dataRows },
-    {
-      quotes: true,
-      quoteChar: '"',
-      delimiter: ",",
-      newline: "\n",
-    },
+    { quotes: true, quoteChar: '"', delimiter: ",", newline: "\n" },
   );
 }
 
-// ── Cell formatter (generator helper) ─────────────────────────────────
-
-/** Convert a model field value into its CSV string representation. */
 function formatCellValue(field: string, val: unknown): string {
   if (val === undefined || val === null) return "";
-
-  if (BOOLEAN_FIELDS.has(field)) {
-    return fromBool(val as boolean);
-  }
-
-  if (NUMBER_FIELDS.has(field)) {
-    return String(val);
-  }
-
-  if (PIPE_SEPARATED_FIELDS.has(field)) {
-    return joinPipe(val as string[]);
-  }
-
+  if (BOOLEAN_FIELDS.has(field)) return fromBool(val as boolean);
+  if (NUMBER_FIELDS.has(field)) return String(val);
+  if (PIPE_SEPARATED_FIELDS.has(field)) return joinPipe(val as string[]);
   return String(val);
 }

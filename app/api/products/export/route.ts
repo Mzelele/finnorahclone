@@ -2,12 +2,11 @@ import { generateWebToffeeCSV } from "@/lib/csvParser";
 import { getProductsCollection } from "@/lib/productsDb";
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 function yyyyMMDD(): string {
   const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
 export async function GET(req: NextRequest) {
@@ -18,18 +17,17 @@ export async function GET(req: NextRequest) {
     const inStock = searchParams.get("inStock");
     const search = searchParams.get("search");
 
-    // ── Build MongoDB filter ────────────────────────────────────────
     const filter: Record<string, unknown> = {};
 
-    if (type) {
-      filter.type = type;
-    }
+    if (type) filter.type = type;
 
     if (category) {
-      filter.categories = { $regex: category, $options: "i" };
+      // categories is stored as an array of strings
+      filter.categories = { $elemMatch: { $regex: category, $options: "i" } };
     }
 
-    if (inStock !== null && inStock !== undefined && inStock !== "") {
+    if (inStock !== null && inStock !== "") {
+      // inStock is stored as boolean in DB
       filter.inStock = inStock === "true";
     }
 
@@ -40,28 +38,38 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // ── Connect and fetch ───────────────────────────────────────────
+    console.log("Export filter:", JSON.stringify(filter));
+
     const collection = await getProductsCollection();
     const products = await collection.find(filter).toArray();
 
-    // ── Generate CSV ────────────────────────────────────────────────
+    console.log(`Exporting ${products.length} products`);
+
+    if (products.length === 0) {
+      // Still return a valid CSV with just headers
+      const csv = generateWebToffeeCSV([]);
+      return new Response(csv, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="products-export-${yyyyMMDD()}.csv"`,
+        },
+      });
+    }
+
     const csv = generateWebToffeeCSV(
       products as unknown as Parameters<typeof generateWebToffeeCSV>[0],
     );
-
-    const dateStr = yyyyMMDD();
 
     return new Response(csv, {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="products-export-${dateStr}.csv"`,
+        "Content-Disposition": `attachment; filename="products-export-${yyyyMMDD()}.csv"`,
       },
     });
-  } catch {
-    return NextResponse.json(
-      { success: false, error: "Export failed" },
-      { status: 500 },
-    );
+  } catch (err) {
+    console.error("Export error:", err);
+    return NextResponse.json({ success: false, error: "Export failed" }, { status: 500 });
   }
 }
