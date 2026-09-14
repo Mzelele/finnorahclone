@@ -122,8 +122,9 @@ export default function CheckoutPage() {
   }
 
   const subtotal = Number(cart.cost.subtotalAmount.amount);
+  const isFreeShipping = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
   const activeDelivery = settings.deliveryMethods.find((m) => m.id === selectedDeliveryMethod);
-  const shippingCost = activeDelivery ? activeDelivery.price : (subtotal >= settings.freeShippingThreshold ? 0 : settings.shippingCost);
+  const shippingCost = isFreeShipping ? 0 : (activeDelivery ? activeDelivery.price : settings.shippingCost);
   const total = subtotal + shippingCost;
 
   const validate = () => {
@@ -377,7 +378,7 @@ export default function CheckoutPage() {
 
           <div className="border-t border-neutral-200 p-4 space-y-4">
             {/* Delivery method selection */}
-            {settings.deliveryMethods.filter((m) => m.enabled).length > 0 && (
+            {settings.deliveryMethods.filter((m) => m.enabled).length > 0 && !isFreeShipping && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-neutral-700">Delivery method</p>
                 <div className="space-y-2">
@@ -413,6 +414,14 @@ export default function CheckoutPage() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+            {isFreeShipping && (
+              <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2.5">
+                <svg className="h-4 w-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium text-green-700">You&apos;re eligible for free delivery!</span>
               </div>
             )}
 
