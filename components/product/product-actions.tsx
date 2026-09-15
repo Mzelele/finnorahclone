@@ -9,13 +9,13 @@ import { Product, ProductVariant } from "lib/sfcc/types";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-type CtaBtn = { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+type CtaBtn = { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
 type CtaButtons = { addToCart: CtaBtn; call: CtaBtn; whatsapp: CtaBtn; buyNow: CtaBtn };
 
 const defaultCta: CtaButtons = {
-  addToCart: { enabled: true, text: "Add To Cart", style: "pill", fontWeight: "bold" },
-  call: { enabled: true, text: "Call to Order", style: "pill", fontWeight: "semibold" },
-  whatsapp: { enabled: true, text: "WhatsApp", style: "pill", fontWeight: "semibold" },
+  addToCart: { enabled: true, text: "Add To Cart", mobileText: "", style: "pill", fontWeight: "bold" },
+  call: { enabled: true, text: "Call to Order", mobileText: "", style: "pill", fontWeight: "semibold" },
+  whatsapp: { enabled: true, text: "WhatsApp", mobileText: "", style: "pill", fontWeight: "semibold" },
   buyNow: { enabled: true, text: "Buy It Now", style: "rectangle", fontWeight: "bold" },
 };
 
@@ -82,7 +82,7 @@ export function ProductActions({
     router.push("/checkout");
   };
 
-  const renderBuyNow = (className?: string) => {
+  const renderBuyNow = (className?: string, mobile?: boolean) => {
     const base = clsx(
       "flex w-full items-center justify-center gap-2 bg-orange-500 tracking-wide text-white",
       shapeClass(resolvedCta.buyNow?.style || "rectangle"),
@@ -93,7 +93,7 @@ export function ProductActions({
     if (!availableForSale || !selectedVariantId) return null;
     return (
       <button onClick={handleBuyNow} className={clsx(base, "hover:opacity-90")} type="button">
-        {resolvedCta.buyNow?.text || "Buy It Now"}
+        {mobile ? (resolvedCta.buyNow?.mobileText || resolvedCta.buyNow?.text || "Buy It Now") : (resolvedCta.buyNow?.text || "Buy It Now")}
       </button>
     );
   };
@@ -137,7 +137,7 @@ export function ProductActions({
   const shapeClass = (style: string) => style === "rectangle" ? "rounded-[4px]" : "rounded-full";
   const weightClass = (w?: string) => w === "bold" ? "font-bold" : w === "semibold" ? "font-semibold" : "font-normal";
 
-  const renderAddToCart = (className?: string) => {
+  const renderAddToCart = (className?: string, mobile?: boolean) => {
     const base = clsx(
       "flex w-full items-center justify-center gap-2 bg-blue-600 tracking-wide text-white",
       shapeClass(resolvedCta.addToCart.style),
@@ -156,14 +156,14 @@ export function ProductActions({
       return (
         <button disabled className={clsx(base, disabledClasses)}>
           <ShoppingCartIcon className="h-4 w-4 shrink-0" />
-          {resolvedCta.addToCart.text || "Add To Cart"}
+          {mobile ? (resolvedCta.addToCart.mobileText || resolvedCta.addToCart.text || "Add To Cart") : (resolvedCta.addToCart.text || "Add To Cart")}
         </button>
       );
     }
     return (
       <button onClick={handleAdd} className={clsx(base, "hover:opacity-90")} type="button">
         <ShoppingCartIcon className="h-4 w-4 shrink-0" />
-        {resolvedCta.addToCart.text || "Add To Cart"}
+        {mobile ? (resolvedCta.addToCart.mobileText || resolvedCta.addToCart.text || "Add To Cart") : (resolvedCta.addToCart.text || "Add To Cart")}
       </button>
     );
   };
@@ -275,7 +275,7 @@ export function ProductActions({
           )}
           {resolvedCta.addToCart.enabled && <div className="min-w-0 flex-1 basis-0">{renderAddToCart("p-3 text-sm")}</div>}
           {resolvedCta.buyNow?.enabled && renderBuyNow("p-3 text-sm") && (
-            <div className="min-w-0 flex-1 basis-0">{renderBuyNow("p-3 text-sm")}</div>
+            <div className="min-w-0 flex-1 basis-0">{renderBuyNow("p-3 text-sm", true)}</div>
           )}
           {phone && resolvedCta.whatsapp.enabled && (
             <div className="min-w-0 flex-1 basis-0">

@@ -70,9 +70,9 @@ type SettingsData = {
   navbarDark: boolean;
   paymentMethods: PaymentMethod[];
   ctaButtons: {
-    addToCart: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
-    call: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
-    whatsapp: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    addToCart: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    call: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    whatsapp: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
     buyNow: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
   };
 };
@@ -643,13 +643,23 @@ export default function SettingsPage() {
                     />
                   </label>
                 </div>
-                <div className="grid gap-3 grid-cols-3">
+                <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1">
                     <Label className="text-xs">Button Text</Label>
                     <Input
                       value={btn.text}
                       onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, text: e.target.value } })}
                       placeholder="Button label..."
+                      className="h-8 text-sm"
+                      disabled={!btn.enabled}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Mobile Label <span className="text-neutral-400 font-normal">(optional)</span></Label>
+                    <Input
+                      value={btn.mobileText || ""}
+                      onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, mobileText: e.target.value } })}
+                      placeholder={btn.text || "Same as button text"}
                       className="h-8 text-sm"
                       disabled={!btn.enabled}
                     />

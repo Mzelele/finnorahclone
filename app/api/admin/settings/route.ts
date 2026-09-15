@@ -47,9 +47,9 @@ const defaultSettings = {
   // Navbar theme: false = light, true = dark
   navbarDark: false,
   ctaButtons: {
-    addToCart: { enabled: true, text: "Add To Cart", style: "pill", fontWeight: "bold" },
-    call: { enabled: true, text: "Call to Order", style: "pill", fontWeight: "semibold" },
-    whatsapp: { enabled: true, text: "WhatsApp", style: "pill", fontWeight: "semibold" },
+    addToCart: { enabled: true, text: "Add To Cart", mobileText: "", style: "pill", fontWeight: "bold" },
+    call: { enabled: true, text: "Call to Order", mobileText: "", style: "pill", fontWeight: "semibold" },
+    whatsapp: { enabled: true, text: "WhatsApp", mobileText: "", style: "pill", fontWeight: "semibold" },
   },
   paymentMethods: [
     {
