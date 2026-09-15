@@ -73,6 +73,7 @@ type SettingsData = {
     addToCart: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
     call: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
     whatsapp: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    buyNow: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
   };
 };
 
@@ -122,6 +123,7 @@ const defaultSettings: SettingsData = {
     addToCart: { enabled: true, text: "Add To Cart", style: "pill" as const, fontWeight: "bold" as const },
     call: { enabled: true, text: "Call to Order", style: "pill" as const, fontWeight: "semibold" as const },
     whatsapp: { enabled: true, text: "WhatsApp", style: "pill" as const, fontWeight: "semibold" as const },
+    buyNow: { enabled: true, text: "Buy It Now", style: "rectangle" as const, fontWeight: "bold" as const },
   },
   paymentMethods: [
     {
@@ -624,8 +626,8 @@ export default function SettingsPage() {
       {activeTab === "cta" && (
         <div className="space-y-6">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">Control the Call-to-Action buttons shown on product pages. Changes apply to both mobile sticky bar and desktop layout.</p>
-          {(["addToCart", "call", "whatsapp"] as const).map((key) => {
-            const labels: Record<string, string> = { addToCart: "Add to Cart", call: "Call Button", whatsapp: "WhatsApp Button" };
+          {(["addToCart", "buyNow", "call", "whatsapp"] as const).map((key) => {
+            const labels: Record<string, string> = { addToCart: "Add to Cart", call: "Call Button", whatsapp: "WhatsApp Button", buyNow: "Buy It Now Button" };
             const btn = settings.ctaButtons?.[key] || { enabled: true, text: "", style: "pill" };
             return (
               <div key={key} className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3 dark:border-neutral-700 dark:bg-neutral-800">
@@ -685,7 +687,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       className={`px-5 py-2 text-sm text-white ${
-                        key === "whatsapp" ? "bg-green-600" : key === "call" ? "bg-neutral-900" : "bg-blue-600"
+                        key === "whatsapp" ? "bg-green-600" : key === "call" ? "bg-neutral-900" : key === "buyNow" ? "bg-orange-500" : "bg-blue-600"
                       } ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"} ${
                         btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold"
                       }`}

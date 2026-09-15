@@ -1,3 +1,4 @@
+import React from "react";
 import { Breadcrumbs } from "components/breadcrumbs";
 import Prose from "components/prose";
 import { WishlistButton } from "components/wishlist/wishlist-button";
@@ -9,10 +10,12 @@ export function ProductDescription({
   product,
   compact = false,
   breadcrumbs,
+  actions,
 }: {
   product: Product;
   compact?: boolean;
   breadcrumbs?: { label: string; href?: string }[];
+  actions?: React.ReactNode;
 }) {
   return (
     <>
@@ -39,7 +42,8 @@ export function ProductDescription({
         images={product.images}
         defaultVariant={product.defaultVariant}
       />
-            {product.productHighlights ? (
+            {actions ? <div className="mt-2.5">{actions}</div> : null}
+      {product.productHighlights ? (
         <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
             Key Features

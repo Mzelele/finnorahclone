@@ -208,18 +208,20 @@ export default async function ProductPage(props: {
               {/* Breadcrumbs (Home > Category) appear above the title via ProductDescription */}
               <div className="bg-white px-3 pt-1.5 pb-3 border-t border-neutral-100">
                 <Suspense fallback={null}>
-                  <ProductDescription product={product} compact breadcrumbs={breadcrumbItems} />
+                  <ProductDescription
+                    product={product}
+                    compact
+                    breadcrumbs={breadcrumbItems}
+                    actions={
+                      <ProductActions
+                        product={product}
+                        whatsappPhone={settings.whatsappPhone || settings.storePhone}
+                        storePhone={settings.storePhone}
+                        ctaButtons={settings.ctaButtons}
+                      />
+                    }
+                  />
                 </Suspense>
-                <div className="mt-2.5">
-                  <Suspense fallback={null}>
-                    <ProductActions
-                      product={product}
-                      whatsappPhone={settings.whatsappPhone || settings.storePhone}
-                      storePhone={settings.storePhone}
-                      ctaButtons={settings.ctaButtons}
-                    />
-                  </Suspense>
-                </div>
               </div>
             </div>
 
