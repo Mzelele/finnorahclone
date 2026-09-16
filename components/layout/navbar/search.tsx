@@ -21,7 +21,7 @@ type SearchProduct = {
   };
 };
 
-export default function Search() {
+export default function Search({ navbarDark }: { navbarDark?: boolean } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams?.get("q") || "";
@@ -83,7 +83,7 @@ export default function Search() {
             setQuery(e.target.value);
             setOpen(true);
           }}
-          className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 pr-9 text-sm text-neutral-100 placeholder:text-neutral-500 transition-all focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+          className={`w-full rounded-lg border px-3 py-2 pr-9 text-sm transition-all focus:outline-none focus:ring-1 ${navbarDark ? "border-neutral-700 bg-neutral-800 text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-neutral-500" : "border-neutral-300 bg-neutral-100 text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:ring-neutral-400"}`}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-md bg-red-600 p-1 hover:bg-red-500 transition-colors">
           <MagnifyingGlassIcon className="h-3.5 w-3.5 text-white" />
@@ -156,7 +156,7 @@ export function SearchSkeleton() {
       <div className="relative flex items-center">
         <input
           placeholder="Search products..."
-          className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 pr-9 text-sm text-neutral-100 placeholder:text-neutral-500"
+          className="w-full rounded-lg border border-neutral-300 bg-neutral-100 px-3 py-2 pr-9 text-sm text-neutral-900 placeholder:text-neutral-400"
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-md bg-red-600 p-1">
           <MagnifyingGlassIcon className="h-3.5 w-3.5 text-white" />

@@ -188,8 +188,8 @@ export function Navbar({
           {/* Center: Search - desktop only */}
           {!isCheckout && (
             <div className="hidden flex-1 max-w-md md:block">
-              <Suspense fallback={<SearchSkeleton />}>
-                <Search />
+              <Suspense fallback={<SearchSkeleton navbarDark={dark} />}>
+                <Search navbarDark={dark} />
               </Suspense>
             </div>
           )}
