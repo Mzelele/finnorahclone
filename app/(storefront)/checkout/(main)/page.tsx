@@ -40,27 +40,14 @@ export default function CheckoutPage() {
     website: "", // honeypot anti-spam field (hidden from humans)
   });
 
-  const [settings, setSettings] = useState({
-    shippingCost: 200,
-    freeShippingThreshold: 5000,
-    shippingNote: "",
-    currency: "KES",
-    deliveryMethods: [] as { id: string; name: string; description: string; price: number; enabled: boolean }[],
-    paymentMethods: [
-      {
-        id: "cash_on_delivery",
-        name: "Cash on Delivery",
-        description: "Pay on delivery.",
-        enabled: true,
-      },
-      {
-        id: "mpesa",
-        name: "M-Pesa (Receive Prompt)",
-        description: "You'll receive an M-Pesa prompt on your phone after placing your order.",
-        enabled: true,
-      },
-    ] as { id: "cash_on_delivery" | "mpesa"; name: string; description: string; enabled: boolean }[],
-  });
+  const [settings, setSettings] = useState<{
+    shippingCost: number;
+    freeShippingThreshold: number;
+    shippingNote: string;
+    currency: string;
+    deliveryMethods: { id: string; name: string; description: string; price: number; enabled: boolean }[];
+    paymentMethods: { id: "cash_on_delivery" | "mpesa"; name: string; description: string; enabled: boolean }[];
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/storefront/settings")
@@ -122,9 +109,9 @@ export default function CheckoutPage() {
   }
 
   const subtotal = Number(cart.cost.subtotalAmount.amount);
-  const isFreeShipping = settings.freeShippingThreshold > 0 && subtotal >= settings.freeShippingThreshold;
-  const activeDelivery = settings.deliveryMethods.find((m) => m.id === selectedDeliveryMethod);
-  const shippingCost = isFreeShipping ? 0 : (activeDelivery ? activeDelivery.price : settings.shippingCost);
+  const isFreeShipping = (settings?.freeShippingThreshold ?? 5000) > 0 && subtotal >= (settings?.freeShippingThreshold ?? 5000);
+  const activeDelivery = (settings?.deliveryMethods ?? []).find((m) => m.id === selectedDeliveryMethod);
+  const shippingCost = isFreeShipping ? 0 : (activeDelivery ? activeDelivery.price : settings?.shippingCost ?? 200);
   const total = subtotal + shippingCost;
 
   const validate = () => {
@@ -273,8 +260,8 @@ export default function CheckoutPage() {
         </button>
       </div>
       <div className="border-t border-neutral-200 bg-white px-4 py-3 space-y-1.5 text-sm">
-        {settings.shippingNote && (
-          <p className="text-xs text-neutral-500">{settings.shippingNote}</p>
+        {(settings?.shippingNote ?? "") && (
+          <p className="text-xs text-neutral-500">{settings?.shippingNote ?? ""}</p>
         )}
         <div className="flex justify-between">
           <span className="text-neutral-600">Subtotal</span>
@@ -378,11 +365,11 @@ export default function CheckoutPage() {
 
           <div className="border-t border-neutral-200 p-4 space-y-4">
             {/* Delivery method selection */}
-            {settings.deliveryMethods.filter((m) => m.enabled).length > 0 && !isFreeShipping && (
+            {settings && (settings?.deliveryMethods ?? []).filter((m) => m.enabled).length > 0 && !isFreeShipping && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-neutral-700">Delivery method</p>
                 <div className="space-y-2">
-                  {settings.deliveryMethods.filter((m) => m.enabled).map((method) => {
+                  {settings?.deliveryMethods ?? [].filter((m) => m.enabled).map((method) => {
                     const isSelected = selectedDeliveryMethod === method.id;
                     return (
                       <label
@@ -429,7 +416,7 @@ export default function CheckoutPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-neutral-700">Payment method</p>
               <div className="space-y-2">
-                {settings.paymentMethods
+                {(settings?.paymentMethods ?? [])
                   .filter((m) => m.enabled)
                   .map((method) => {
                     const isSelected = paymentMethod === method.id;

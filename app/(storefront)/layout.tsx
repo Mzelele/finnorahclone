@@ -1,4 +1,5 @@
 import { CartProvider } from "components/cart/cart-context";
+import { WishlistProvider } from "components/wishlist/wishlist-context";
 import { AnnouncementBar } from "components/layout/announcement-bar";
 import Footer from "components/layout/footer";
 import { Navbar } from "components/layout/navbar";
@@ -123,6 +124,7 @@ export default async function StorefrontLayout({
 
       <HeadScripts scripts={settings.scripts} />
 
+      <WishlistProvider>
       <CartProvider>
         <div className="flex min-h-screen flex-col">
           {settings.announcementBar && settings.announcementText && (
@@ -139,6 +141,7 @@ export default async function StorefrontLayout({
           <Footer />
         </div>
       </CartProvider>
+      </WishlistProvider>
 
       <BodyEndScripts scripts={settings.scripts} />
     </>
