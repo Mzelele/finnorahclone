@@ -34,7 +34,7 @@ export function ProductActions({
   const { variants, availableForSale } = product;
   // Defensive: tolerate missing/empty variants.
   const safeVariants = variants || [];
-  const { addCartItem } = useCart();
+  const { addCartItem, cart } = useCart();
   const { state } = useProduct();
 
   const variant = safeVariants.find((variant: ProductVariant) =>
@@ -73,13 +73,21 @@ export function ProductActions({
 
   const handleAdd = () => {
     if (!finalVariant) return;
+    const alreadyInCart = cart?.lines.some(
+      (item) => item.merchandise.id === finalVariant.id
+    );
+    if (alreadyInCart) { setShowDuplicateModal(true); return; }
     addCartItem(finalVariant, product);
   };
 
   const handleBuyNow = () => {
     if (!finalVariant) return;
-    addCartItem(finalVariant, product);
-    router.push("/checkout");
+    const alreadyInCart = cart?.lines.some(
+      (item) => item.merchandise.id === finalVariant.id
+    );
+    if (!alreadyInCart) addCartItem(finalVariant, product);
+    // Small delay to let cart state persist to localStorage before navigation
+    setTimeout(() => router.push("/checkout"), 80);
   };
 
   const renderBuyNow = (className?: string, mobile?: boolean) => {
@@ -126,6 +134,7 @@ export function ProductActions({
     : "#";
 
   const [showPhone, setShowPhone] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const cartButtonClasses =
       "flex w-full items-center justify-center gap-2 rounded-[4px] bg-blue-600 tracking-wide text-white";
   const disabledClasses = "cursor-not-allowed opacity-60 hover:opacity-60";
@@ -300,6 +309,54 @@ export function ProductActions({
         <div className="md:hidden">{renderAddToCart()}</div>
       )}
 
+      {/* Duplicate item modal */}
+      {showDuplicateModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={() => setShowDuplicateModal(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+              <svg className="h-7 w-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13M10 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm7 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+              </svg>
+            </div>
+            {/* Text */}
+            <h3 className="mb-1 text-center text-base font-bold text-neutral-900">
+              Already in Your Cart
+            </h3>
+            <p className="mb-5 text-center text-sm text-neutral-500">
+              This item is already waiting for you. Head to checkout or keep browsing — we&apos;ve got you covered.
+            </p>
+            {/* Actions */}
+            <div className="flex flex-col gap-2">
+              <a
+                href="/checkout"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+              >
+                Proceed to Checkout
+              </a>
+              <button
+                onClick={() => setShowDuplicateModal(false)}
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Continue Shopping
+              </button>
+            </div>
+            {/* Close */}
+            <button
+              onClick={() => setShowDuplicateModal(false)}
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

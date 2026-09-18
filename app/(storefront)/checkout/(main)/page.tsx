@@ -369,7 +369,7 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-neutral-700">Delivery method</p>
                 <div className="space-y-2">
-                  {settings?.deliveryMethods ?? [].filter((m) => m.enabled).map((method) => {
+                  {(settings?.deliveryMethods ?? []).filter((m) => m.enabled).map((method) => {
                     const isSelected = selectedDeliveryMethod === method.id;
                     return (
                       <label
