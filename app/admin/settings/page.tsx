@@ -644,7 +644,7 @@ export default function SettingsPage() {
                     />
                   </label>
                 </div>
-                <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Button Text</Label>
                     <Input
@@ -690,7 +690,7 @@ export default function SettingsPage() {
                       <option value="bold">Bold</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 sm:col-span-1">
                     <Label className="text-xs">BG Color</Label>
                     <div className="flex items-center gap-1.5">
                       <input
@@ -710,7 +710,7 @@ export default function SettingsPage() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 sm:col-span-1">
                     <Label className="text-xs">Text Color</Label>
                     <div className="flex items-center gap-1.5">
                       <input
@@ -737,9 +737,11 @@ export default function SettingsPage() {
                     <Label className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5 block">Preview</Label>
                     <button
                       type="button"
-                      className={`px-5 py-2 text-sm text-white ${
-                        key === "whatsapp" ? "bg-green-600" : key === "call" ? "bg-neutral-900" : key === "buyNow" ? "bg-orange-500" : "bg-blue-600"
-                      } ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"} ${
+                      style={{
+                        backgroundColor: btn.bgColor || (key === "whatsapp" ? "#16a34a" : key === "call" ? "#111827" : key === "buyNow" ? "#f97316" : "#2563eb"),
+                        color: btn.textColor || "#ffffff",
+                      }}
+                      className={`px-5 py-2 text-sm transition-opacity hover:opacity-90 ${btn.style === "pill" ? "rounded-full" : "rounded-[4px]"} ${
                         btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold"
                       }`}
                     >
