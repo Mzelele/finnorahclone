@@ -333,7 +333,7 @@ export function ProductActions({
               Already in Your Cart
             </h3>
             <p className="mb-5 text-center text-sm text-neutral-500">
-              This item is already waiting for you. Head to checkout or keep browsing — we&apos;ve got you covered.
+              This item is already in your cart. Ready to check out, or would you like to keep shopping?
             </p>
             {/* Actions */}
             <div className="flex flex-col gap-2">
