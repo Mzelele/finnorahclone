@@ -70,9 +70,10 @@ type SettingsData = {
   navbarDark: boolean;
   paymentMethods: PaymentMethod[];
   ctaButtons: {
-    addToCart: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
-    call: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
-    whatsapp: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
+    addToCart: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
+    call: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
+    whatsapp: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
+    buyNow?: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
     buyNow: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
   };
 };
@@ -643,7 +644,7 @@ export default function SettingsPage() {
                     />
                   </label>
                 </div>
-                <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Button Text</Label>
                     <Input
@@ -688,6 +689,46 @@ export default function SettingsPage() {
                       <option value="semibold">Semi-bold</option>
                       <option value="bold">Bold</option>
                     </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">BG Color</Label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={btn.bgColor || "#2563eb"}
+                        onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, bgColor: e.target.value } })}
+                        disabled={!btn.enabled}
+                        className="h-8 w-10 cursor-pointer rounded border border-neutral-200 p-0.5 disabled:opacity-50 dark:border-neutral-700"
+                      />
+                      <input
+                        type="text"
+                        value={btn.bgColor || "#2563eb"}
+                        onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, bgColor: e.target.value } })}
+                        disabled={!btn.enabled}
+                        className="h-8 flex-1 rounded-md border border-neutral-200 bg-white px-2 text-xs disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        placeholder="#2563eb"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Text Color</Label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={btn.textColor || "#ffffff"}
+                        onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, textColor: e.target.value } })}
+                        disabled={!btn.enabled}
+                        className="h-8 w-10 cursor-pointer rounded border border-neutral-200 p-0.5 disabled:opacity-50 dark:border-neutral-700"
+                      />
+                      <input
+                        type="text"
+                        value={btn.textColor || "#ffffff"}
+                        onChange={(e) => updateField("ctaButtons", { ...settings.ctaButtons, [key]: { ...btn, textColor: e.target.value } })}
+                        disabled={!btn.enabled}
+                        className="h-8 flex-1 rounded-md border border-neutral-200 bg-white px-2 text-xs disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        placeholder="#ffffff"
+                      />
+                    </div>
                   </div>
                 </div>
                 {/* Preview */}

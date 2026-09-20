@@ -47,9 +47,10 @@ const defaultSettings = {
   // Navbar theme: false = light, true = dark
   navbarDark: false,
   ctaButtons: {
-    addToCart: { enabled: true, text: "Add To Cart", mobileText: "", style: "pill", fontWeight: "bold" },
-    call: { enabled: true, text: "Call to Order", mobileText: "", style: "pill", fontWeight: "semibold" },
-    whatsapp: { enabled: true, text: "WhatsApp", mobileText: "", style: "pill", fontWeight: "semibold" },
+    addToCart: { enabled: true, text: "Add To Cart", mobileText: "", style: "pill", fontWeight: "bold", bgColor: "#2563eb", textColor: "#ffffff" },
+    call: { enabled: true, text: "Call to Order", mobileText: "", style: "pill", fontWeight: "semibold", bgColor: "#ffffff", textColor: "#111827" },
+    whatsapp: { enabled: true, text: "WhatsApp", mobileText: "", style: "pill", fontWeight: "semibold", bgColor: "#16a34a", textColor: "#ffffff" },
+    buyNow: { enabled: true, text: "Buy It Now", mobileText: "", style: "pill", fontWeight: "semibold", bgColor: "#f97316", textColor: "#ffffff" },
   },
   paymentMethods: [
     {
