@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import clsx from "clsx";
-import { Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Check, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -70,6 +70,7 @@ function ProductsContent() {
   const [bulkField, setBulkField] = useState<"status" | "stock" | "price" | "category" | null>(null);
   const [bulkValue, setBulkValue] = useState<string>("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
   const [limit, setLimit] = useState(20);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -476,8 +477,8 @@ function ProductsContent() {
         </div>
       </div>
 
-      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
-        <DialogContent>
+      <Dialog open={bulkOpen} onOpenChange={(v) => { setBulkOpen(v); if (!v) setCategorySearch(""); }}>
+        <DialogContent className="dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
           <DialogHeader>
             <DialogTitle>Bulk Update {bulkField ? bulkField.charAt(0).toUpperCase() + bulkField.slice(1) : ""}</DialogTitle>
             <DialogDescription>
@@ -525,16 +526,46 @@ function ProductsContent() {
             {bulkField === "category" && (
               <div>
                 <Label>Category</Label>
-                <Select value={bulkValue} onValueChange={setBulkValue}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-1 space-y-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="h-9 w-full rounded-md border border-neutral-200 bg-white pl-9 pr-3 text-sm text-neutral-900 outline-none focus:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400"
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700">
+                    {categories
+                      .filter((c) => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                      .map((c) => (
+                        <button
+                          key={c._id}
+                          type="button"
+                          onClick={() => setBulkValue(c._id)}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors ${
+                            bulkValue === c._id
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                              : "text-neutral-900 hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                          }`}
+                        >
+                          {bulkValue === c._id && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          {bulkValue !== c._id && <span className="h-3.5 w-3.5 shrink-0" />}
+                          {c.name}
+                        </button>
+                      ))}
+                    {categories.filter((c) => c.name.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+                      <p className="px-3 py-2 text-sm text-neutral-400">No categories found</p>
+                    )}
+                  </div>
+                  {bulkValue && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Selected: <span className="font-medium text-neutral-900 dark:text-white">{categories.find(c => c._id === bulkValue)?.name}</span>
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
