@@ -125,19 +125,13 @@ export async function PUT(
       const detectedBrand = await detectBrand(body.name);
       if (detectedBrand) body.brand = detectedBrand;
 
-      // Auto-detect categories from the product title/description
-      const text = `${body.name || ""} ${body.description || ""}`.trim();
-      const detectedCategories = await detectCategory(text);
-      
-      // Merge: user manually selected categories + detected
+      // Use only manually selected categories
       const manualCategories = Array.isArray(body.categories) ? body.categories : [];
       if (body.category && !manualCategories.includes(body.category)) {
         manualCategories.push(body.category);
       }
       delete body.category;
-      
-      const allCategoryIds = [...new Set([...manualCategories, ...detectedCategories])];
-      body.categories = allCategoryIds.map((id: string) => {
+      body.categories = manualCategories.map((id: string) => {
         try { return new ObjectId(id); } catch { return id; }
       });
     } else {
@@ -200,3 +194,4 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
