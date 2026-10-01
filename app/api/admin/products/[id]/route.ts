@@ -133,7 +133,6 @@ export async function PUT(
       delete body.category;
       body.categories = manualCategories.map((id: string) => {
         try { return new ObjectId(id); } catch { return id; }
-      }); } catch { return id; }
       });
     } else {
       // Handle single category field
