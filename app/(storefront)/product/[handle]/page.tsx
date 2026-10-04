@@ -686,7 +686,7 @@ export default async function ProductPage(props: {
 
           </ProductProvider>
                     {product.descriptionHtml ? (
-                      <div className="-mt-6 mb-4 overflow-hidden rounded-none border border-neutral-200 bg-white shadow-sm md:mx-0 md:mt-6 md:mb-6 md:rounded-2xl">
+                      <div className="mx-3 mb-4 mt-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm md:mx-0 md:mt-6 md:mb-6">
               <div className="border-b border-neutral-200 bg-neutral-50/70 px-4 py-3 md:px-8 md:py-4">
                 <h2 className="text-lg font-bold text-neutral-900 md:text-2xl">Product Description</h2>
               </div>

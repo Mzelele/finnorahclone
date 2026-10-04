@@ -236,33 +236,36 @@ export function ProductActions({
       </div>
 
       {/* Trust badges */}
-      <div className="mt-2 space-y-1 md:mt-8 md:space-y-1.5">
-        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-2.5 py-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
-            <BanknotesIcon className="h-3 w-3" />
+      <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100 md:mt-8">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100">
+            <BanknotesIcon className="h-4 w-4 text-green-600" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-green-800">Cash on Delivery</p>
-            <p className="text-[11px] text-green-700/80">Pay when you receive your order</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-neutral-900">Cash on Delivery</p>
+            <p className="text-[11px] text-neutral-500">Pay when you receive your order</p>
           </div>
+          <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">Safe</span>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-            <TruckIcon className="h-3 w-3" />
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+            <TruckIcon className="h-4 w-4 text-blue-600" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-blue-800">Cheap Delivery Rates</p>
-            <p className="text-[11px] text-blue-700/80">Parcel Fees - <span className="font-bold">Ksh 190</span> Only Countrywide</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-neutral-900">Cheap Delivery Rates</p>
+            <p className="text-[11px] text-neutral-500">Parcel Fees — from <span className="font-semibold text-neutral-700">Ksh 190</span></p>
           </div>
+          <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Fast</span>
         </div>
-                <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-700">
-            <MapPinIcon className="h-3 w-3" />
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100">
+            <MapPinIcon className="h-4 w-4 text-orange-600" />
           </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-800">Fast Local Shipping</p>
-            <p className="text-[11px] text-slate-600">Delivered within Nairobi & across Kenya</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-neutral-900">Fast Local Shipping</p>
+            <p className="text-[11px] text-neutral-500">Within Nairobi & across Kenya</p>
           </div>
+          <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">Local</span>
         </div>
       </div>
 
