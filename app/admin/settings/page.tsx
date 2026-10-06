@@ -74,7 +74,6 @@ type SettingsData = {
     call: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
     whatsapp: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
     buyNow?: { enabled: boolean; text: string; mobileText?: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold"; bgColor?: string; textColor?: string };
-    buyNow: { enabled: boolean; text: string; style: "pill" | "rectangle"; fontWeight?: "normal" | "semibold" | "bold" };
   };
 };
 
@@ -320,7 +319,7 @@ export default function SettingsPage() {
 
   const updateField = (
     field: keyof SettingsData,
-    value: string | boolean | number | string[],
+    value: SettingsData[keyof SettingsData],
   ) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
