@@ -74,15 +74,6 @@ function getClientIp(req: NextRequest): string {
   );
 }
 
-// Normalize Kenyan phone numbers to local format: 07XXXXXXXX / 01XXXXXXXX
-function normalizeKenyanPhone(input: unknown): string {
-  let p = String(input ?? "").replace(/[\s\-().]/g, "");
-  if (p.startsWith("+254")) p = "0" + p.slice(4);
-  else if (p.startsWith("254") && p.length === 12) p = "0" + p.slice(3);
-  else if (/^[17]\d{8}$/.test(p)) p = "0" + p;
-  return p;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const db = await connectDB();
@@ -117,8 +108,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { fullName, phone: rawPhone, email, address, city, region, country, notes } = body.shippingAddress;
-    const phone = normalizeKenyanPhone(rawPhone);
+    const { fullName, phone, email, address, city, region, country, notes } = body.shippingAddress;
 
     // ---- 1) Spam name blacklist ----
     if (SPAM_NAMES.has(String(fullName).trim().toLowerCase())) {
@@ -175,27 +165,17 @@ export async function POST(req: NextRequest) {
 
     const customerEmail = email || (phone ? `${phone}@placeholder.local` : `guest-${Date.now()}@placeholder.local`);
 
-    let customer: any = null;
-    {
-      const custNow = new Date();
-      const emailCollation = { locale: "en", strength: 2 }; // case-insensitive match
-      const findExisting = () =>
-        db.collection("customers").findOne({ email: customerEmail }, { collation: emailCollation });
-
-      customer = await findExisting();
-      if (!customer) {
-        try {
-          const result = await db.collection("customers").insertOne({
-            email: customerEmail, name: fullName, phone: phone || "", createdAt: custNow, updatedAt: custNow,
-          });
-          customer = { _id: result.insertedId, email: customerEmail, name: fullName, phone: phone || "" };
-        } catch (e: any) {
-          // Duplicate key (double submit / race): the customer now exists, so reuse it
-          if (e?.code === 11000) customer = await findExisting();
-          else throw e;
-        }
-      }
-      if (!customer) throw new Error("Could not create or find customer");
+    let customer = await db.collection("customers").findOne({ $or: [{ email: customerEmail }, { phone }] });
+    if (customer && email && customer.email !== email) {
+      await db.collection("customers").updateOne({ _id: customer._id }, { $set: { email: email } });
+      customer.email = email;
+    }
+    if (!customer) {
+      const now = new Date();
+      const result = await db.collection("customers").insertOne({
+        email: customerEmail, name: fullName, phone: phone || "", createdAt: now, updatedAt: now,
+      });
+      customer = { _id: result.insertedId, email: customerEmail, name: fullName, phone: phone || "" };
     }
 
     for (const item of body.items) {
