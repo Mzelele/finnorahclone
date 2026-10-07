@@ -4,6 +4,7 @@ import Prose from "components/prose";
 import { WishlistButton } from "components/wishlist/wishlist-button";
 import { Product } from "lib/sfcc/types";
 import { ProductPrice } from "./product-price";
+import { ProductRatingSummary } from "./product-rating-summary";
 import { VariantSelector } from "./variant-selector";
 
 export function ProductDescription({
@@ -29,6 +30,7 @@ export function ProductDescription({
                 <h1 className={compact ? "mb-1.5 text-lg font-semibold leading-snug text-neutral-950" : "mb-2 text-2xl font-semibold leading-tight text-neutral-950 md:text-3xl"}>
           {product.title}
         </h1>
+        <ProductRatingSummary productHandle={product.handle} />
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
             <ProductPrice product={product} />

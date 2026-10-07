@@ -99,7 +99,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
             leaveFrom="opacity-100 backdrop-blur-[.5px]"
             leaveTo="opacity-0 backdrop-blur-none"
           >
-            <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+            <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
           </Transition.Child>
           <Transition.Child
             as={Fragment}
@@ -298,13 +298,22 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                       />
                     </div>
                     <div className="my-4 border-t border-neutral-200" />
-                                        <button
-                                          onClick={handleCheckout}
-                                          className={`flex w-full items-center justify-center gap-2 bg-blue-600 px-5 py-3.5 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
-                                        >
-                                          <Lock className="h-4 w-4" />
-                                          Proceed to Checkout
-                                        </button>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/cart"
+                        onClick={closeCart}
+                        className={`flex w-full items-center justify-center border border-blue-600 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 ${ctaStyle.shape}`}
+                      >
+                        VIEW CART
+                      </Link>
+                      <button
+                        onClick={handleCheckout}
+                        className={`flex w-full items-center justify-center gap-2 bg-blue-600 px-5 py-3.5 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
+                      >
+                        <Lock className="h-4 w-4" />
+                        PROCEED TO CHECKOUT
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

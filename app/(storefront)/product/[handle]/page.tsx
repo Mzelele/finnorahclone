@@ -11,6 +11,7 @@ import Prose from "components/prose";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { Image } from "lib/sfcc/types";
 import { getProductBySlug, getRelatedProducts } from "lib/storefront/products";
+import { ProductReviews } from "components/product/product-reviews";
 import { getStoreSettings } from "lib/storefront/settings";
 import { baseUrl } from "lib/utils";
 import Link from "next/link";
@@ -698,6 +699,7 @@ export default async function ProductPage(props: {
               </div>
             </div>
           ) : null}
+          <ProductReviews productHandle={params.handle} />
           <RelatedProducts
             categoryId={product.categoryId}
             categorySlug={product.categorySlug}
