@@ -110,7 +110,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
             leaveFrom="translate-x-0"
             leaveTo="translate-x-full"
           >
-            <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col border-l border-neutral-200 text-neutral-900 md:w-[420px]" style={{ backgroundColor: "#EEF4F8" }}>
+            <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-[85%] flex-col rounded-l-2xl border-l border-neutral-200 text-neutral-900 shadow-2xl md:w-[420px]" style={{ backgroundColor: "#EEF4F8" }}>
               {/* Header — matches main navbar height, shadow and dark/light styling */}
               <div className={`border-b px-3 py-2 shadow-md md:px-6 md:py-3 ${navbarDark ? "border-neutral-700 bg-black" : "border-neutral-200 bg-white"}`}>
                 <div className="flex items-center justify-between gap-2">
