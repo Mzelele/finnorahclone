@@ -213,79 +213,73 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                         return (
                           <li
                             key={i}
-                            className="flex w-full flex-col rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-100 md:p-4"
+                            className="flex w-full flex-row gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-100"
                           >
-                            <div className="relative flex w-full flex-row justify-between">
-  
-                              <div className="flex min-w-0 flex-1 flex-row gap-3">
-                                <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-neutral-200 bg-white md:h-24 md:w-24">
-                                  <Image
-                                    className="h-full w-full object-contain p-1"
-                                    width={96}
-                                    height={96}
-                                    alt={
-                                      item.merchandise.product.image?.altText ||
-                                      item.merchandise.product.featuredImage
-                                        ?.altText ||
-                                      item.merchandise.product.title
-                                    }
-                                    src={
-                                      item.merchandise.product.image?.url ||
-                                      item.merchandise.product.featuredImage
-                                        ?.url ||
-                                      ""
-                                    }
-                                  />
-                                </div>
-                                <Link
-                                  href={merchandiseUrl}
-                                  onClick={closeCart}
-                                  className="z-30 flex min-w-0 flex-1 flex-col"
-                                >
+                            {/* Image */}
+                            <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-neutral-200 bg-white">
+                              <Image
+                                className="h-full w-full object-contain p-1"
+                                width={96}
+                                height={96}
+                                alt={
+                                  item.merchandise.product.image?.altText ||
+                                  item.merchandise.product.featuredImage?.altText ||
+                                  item.merchandise.product.title
+                                }
+                                src={
+                                  item.merchandise.product.image?.url ||
+                                  item.merchandise.product.featuredImage?.url ||
+                                  ""
+                                }
+                              />
+                            </div>
+                            {/* Middle: title + variant + qty + remove */}
+                            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <Link href={merchandiseUrl} onClick={closeCart} className="min-w-0 flex-1">
                                   <span className="line-clamp-2 text-sm font-semibold leading-tight text-neutral-900">
                                     {item.merchandise.product.title}
                                   </span>
-                                  {/* Color swatch pill */}
-                                  {swatchColor && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 self-start">
-                                      <span
-                                        className="inline-block h-3 w-3 rounded-full ring-1 ring-inset ring-neutral-300"
-                                        style={{ backgroundColor: swatchColor }}
-                                      />
-                                      <span className="text-[11px] font-medium text-neutral-600">{colorValue}</span>
-                                    </div>
-                                  )}
-                                  {item.merchandise.title !== DEFAULT_OPTION && !swatchColor ? (
-                                    <p className="mt-1 text-xs text-neutral-500">
-                                      {item.merchandise.title}
-                                    </p>
-                                  ) : null}
                                 </Link>
-                              </div>
-                              <div className="flex h-20 flex-col items-end justify-between md:h-24">
                                 <Price
-                                  className="flex justify-end text-right text-sm font-semibold text-neutral-900"
+                                  className="flex-none text-right text-sm font-semibold text-neutral-900"
                                   amount={item.cost.totalAmount.amount}
-                                  currencyCode={
-                                    item.cost.totalAmount.currencyCode
-                                  }
+                                  currencyCode={item.cost.totalAmount.currencyCode}
                                 />
-                                <div className="ml-auto flex h-8 flex-row items-center rounded-full border border-neutral-200 bg-white">
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="minus"
-                                    optimisticUpdate={updateCartItem}
+                              </div>
+                              {swatchColor ? (
+                                <div className="flex items-center gap-1.5 self-start rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5">
+                                  <span
+                                    className="inline-block h-3 w-3 rounded-full ring-1 ring-inset ring-neutral-300"
+                                    style={{ backgroundColor: swatchColor }}
                                   />
-                                  <p className="min-w-[24px] text-center">
-                                    <span className="text-sm font-semibold text-neutral-900">
-                                      {item.quantity}
-                                    </span>
-                                  </p>
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="plus"
-                                    optimisticUpdate={updateCartItem}
-                                  />
+                                  <span className="text-[11px] font-medium text-neutral-600">{colorValue}</span>
+                                </div>
+                              ) : item.merchandise.title !== DEFAULT_OPTION ? (
+                                <p className="text-xs text-neutral-500">{item.merchandise.title}</p>
+                              ) : null}
+                              <div className="mt-1 flex items-center justify-between">
+                                {/* Quantity selector */}
+                                <div className="flex items-center overflow-hidden rounded border border-neutral-300">
+                                  <button
+                                    type="button"
+                                    aria-label="Decrease quantity"
+                                    onClick={() => updateCartItem(item.merchandise.id, "minus")}
+                                    className="flex h-7 w-7 items-center justify-center bg-white text-lg font-medium text-neutral-600 hover:bg-neutral-100"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="flex h-7 w-8 items-center justify-center border-x border-neutral-300 bg-white text-sm font-semibold text-neutral-900">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    aria-label="Increase quantity"
+                                    onClick={() => updateCartItem(item.merchandise.id, "plus")}
+                                    className="flex h-7 w-7 items-center justify-center bg-white text-lg font-medium text-neutral-600 hover:bg-neutral-100"
+                                  >
+                                    +
+                                  </button>
                                 </div>
                                 <DeleteItemButton
                                   item={item}
@@ -326,6 +320,14 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                         <Lock className="h-4 w-4" />
                         PROCEED TO CHECKOUT
                       </button>
+                      <Link
+                        href="/shop"
+                        onClick={closeCart}
+                        style={{ color: ctaStyle.bgColor }}
+                        className="block text-center text-sm font-medium hover:underline pt-1"
+                      >
+                        Continue Shopping →
+                      </Link>
                     </div>
                   </div>
                 </div>

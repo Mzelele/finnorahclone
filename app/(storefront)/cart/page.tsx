@@ -71,9 +71,10 @@ export default function CartPage() {
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#EEF4F8" }}>
+      <style>{`.cart-scroll::-webkit-scrollbar { display: none; }`}</style>
       {/* Header */}
       <div className="border-b border-neutral-200 bg-white px-4 py-4 shadow-sm md:px-8">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <p className="text-base font-bold text-neutral-900">
             My Cart
             {cart && cart.lines.length > 0 && (
@@ -89,7 +90,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-6 md:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
         {!cart || cart.lines.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
             <svg className="h-16 w-16 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,9 +107,10 @@ export default function CartPage() {
             </Link>
           </div>
         ) : (
-          <>
-            {/* Items */}
-            <ul className="flex flex-col gap-3">
+          <div className="flex flex-col gap-6 md:grid md:grid-cols-[1fr_340px] md:items-start">
+            {/* Left: scrollable items */}
+            <div className="cart-scroll" style={{ maxHeight: "520px", overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+              <ul className="flex flex-col gap-3">
               {cart.lines
                 .sort((a, b) =>
                   a.merchandise.product.title.localeCompare(
@@ -134,45 +136,60 @@ export default function CartPage() {
                     : undefined;
 
                   return (
-                    <li key={i} className="flex w-full flex-col rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-100 md:p-4">
-                      <div className="relative flex w-full flex-row justify-between">
-                        <div className="flex min-w-0 flex-1 flex-row gap-3">
-                          <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-neutral-200 bg-white md:h-24 md:w-24">
-                            <Image
-                              className="h-full w-full object-contain p-1"
-                              width={96}
-                              height={96}
-                              alt={item.merchandise.product.image?.altText || item.merchandise.product.title}
-                              src={item.merchandise.product.image?.url || item.merchandise.product.featuredImage?.url || ""}
-                            />
-                          </div>
-                          <Link href={merchandiseUrl} className="z-30 flex min-w-0 flex-1 flex-col">
+                    <li key={i} className="flex w-full flex-row gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-neutral-100">
+                      {/* Image */}
+                      <div className="relative h-20 w-20 flex-none overflow-hidden rounded-lg border border-neutral-200 bg-white">
+                        <Image
+                          className="h-full w-full object-contain p-1"
+                          width={96}
+                          height={96}
+                          alt={item.merchandise.product.image?.altText || item.merchandise.product.title}
+                          src={item.merchandise.product.image?.url || item.merchandise.product.featuredImage?.url || ""}
+                        />
+                      </div>
+                      {/* Middle + right */}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <Link href={merchandiseUrl} className="min-w-0 flex-1">
                             <span className="line-clamp-2 text-sm font-semibold leading-tight text-neutral-900">
                               {item.merchandise.product.title}
                             </span>
-                            {swatchColor && (
-                              <div className="mt-1.5 flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 self-start">
-                                <span className="inline-block h-3 w-3 rounded-full ring-1 ring-inset ring-neutral-300" style={{ backgroundColor: swatchColor }} />
-                                <span className="text-[11px] font-medium text-neutral-600">{colorValue}</span>
-                              </div>
-                            )}
-                            {item.merchandise.title !== DEFAULT_OPTION && !swatchColor && (
-                              <p className="mt-1 text-xs text-neutral-500">{item.merchandise.title}</p>
-                            )}
                           </Link>
-                        </div>
-                        <div className="flex h-20 flex-col items-end justify-between md:h-24">
                           <Price
-                            className="flex justify-end text-right text-sm font-semibold text-neutral-900"
+                            className="flex-none text-right text-sm font-semibold text-neutral-900"
                             amount={item.cost.totalAmount.amount}
                             currencyCode={item.cost.totalAmount.currencyCode}
                           />
-                          <div className="ml-auto flex h-8 flex-row items-center rounded-full border border-neutral-200 bg-white">
-                            <EditItemQuantityButton item={item} type="minus" optimisticUpdate={updateCartItem} />
-                            <p className="min-w-[24px] text-center">
-                              <span className="text-sm font-semibold text-neutral-900">{item.quantity}</span>
-                            </p>
-                            <EditItemQuantityButton item={item} type="plus" optimisticUpdate={updateCartItem} />
+                        </div>
+                        {swatchColor ? (
+                          <div className="flex items-center gap-1.5 self-start rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5">
+                            <span className="inline-block h-3 w-3 rounded-full ring-1 ring-inset ring-neutral-300" style={{ backgroundColor: swatchColor }} />
+                            <span className="text-[11px] font-medium text-neutral-600">{colorValue}</span>
+                          </div>
+                        ) : item.merchandise.title !== DEFAULT_OPTION ? (
+                          <p className="text-xs text-neutral-500">{item.merchandise.title}</p>
+                        ) : null}
+                        <div className="mt-1 flex items-center justify-between">
+                          <div className="flex items-center overflow-hidden rounded border border-neutral-300">
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              onClick={() => updateCartItem(item.merchandise.id, "minus")}
+                              className="flex h-7 w-7 items-center justify-center bg-white text-lg font-medium text-neutral-600 hover:bg-neutral-100"
+                            >
+                              -
+                            </button>
+                            <span className="flex h-7 w-8 items-center justify-center border-x border-neutral-300 bg-white text-sm font-semibold text-neutral-900">
+                              {item.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              onClick={() => updateCartItem(item.merchandise.id, "plus")}
+                              className="flex h-7 w-7 items-center justify-center bg-white text-lg font-medium text-neutral-600 hover:bg-neutral-100"
+                            >
+                              +
+                            </button>
                           </div>
                           <DeleteItemButton item={item} optimisticUpdate={updateCartItem} />
                         </div>
@@ -181,9 +198,10 @@ export default function CartPage() {
                   );
                 })}
             </ul>
+            </div>
 
-            {/* Footer */}
-            <div className="mt-6 rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-100">
+            <div className="md:sticky md:top-6">
+              <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-100">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-neutral-700">Total</p>
                 <Price
@@ -201,7 +219,8 @@ export default function CartPage() {
                 Proceed to Checkout
               </button>
             </div>
-          </>
+            </div>
+          </div>
         )}
       </div>
     </main>

@@ -301,11 +301,11 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Delivery Information Card */}
+        {/* Complete Your Orderrmation Card */}
         <div className="rounded-lg border border-neutral-200 bg-white shadow-md overflow-hidden flex flex-col">
           {/* Mobile: Checkout header */}
           <div className="bg-neutral-50/80 px-4 py-3 border-b border-neutral-200 md:hidden">
-            <h2 className="text-base font-semibold text-neutral-900">Delivery Info</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Complete Your Order</h2>
           </div>
 
           <div className="space-y-4 p-4 flex-1">
@@ -358,7 +358,7 @@ export default function CheckoutPage() {
                 value={form.address}
                 onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                 placeholder="Street address, apartment, suite..."
-                className="min-h-10 bg-neutral-50"
+                className="min-h-[80px]"
               />
               {errors.address && <p className="text-xs text-red-500">{errors.address}</p>}
             </div>

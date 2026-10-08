@@ -12,7 +12,7 @@ export default async function Footer() {
   ]);
 
   return (
-    <footer className="bg-neutral-900 border-t border-neutral-800 py-5 text-sm text-neutral-300">
+    <footer className="bg-neutral-900 border-t border-neutral-800 pt-10 pb-5 text-sm text-neutral-300">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4">
         <Suspense
           fallback={
