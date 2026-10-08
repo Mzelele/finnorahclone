@@ -18,12 +18,14 @@ type MerchandiseSearchParams = { [key: string]: string };
 export default function CartPage() {
   const { cart, updateCartItem } = useCart();
   const router = useRouter();
-  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string; bgColor: string; textColor: string }>({
-    shape: "rounded-full",
-    weight: "font-semibold",
-    bgColor: "#2563eb",
-    textColor: "#ffffff",
-  });
+  const getCachedCta = () => {
+    try {
+      const cached = localStorage.getItem("cta_style");
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return { shape: "rounded-full", weight: "font-semibold", bgColor: "#2563eb", textColor: "#ffffff" };
+  };
+  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string; bgColor: string; textColor: string }>(getCachedCta);
 
   useEffect(() => {
     fetch("/api/storefront/settings")
@@ -31,17 +33,14 @@ export default function CartPage() {
       .then((data) => {
         const btn = data?.ctaButtons?.addToCart;
         if (btn) {
-          setCtaStyle({
+          const style = {
             shape: btn.style === "rectangle" ? "rounded-[4px]" : "rounded-full",
-            weight:
-              btn.fontWeight === "bold"
-                ? "font-bold"
-                : btn.fontWeight === "normal"
-                ? "font-normal"
-                : "font-semibold",
+            weight: btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold",
             bgColor: btn.bgColor || "#2563eb",
             textColor: btn.textColor || "#ffffff",
-          });
+          };
+          setCtaStyle(style);
+          try { localStorage.setItem("cta_style", JSON.stringify(style)); } catch {}
         }
       })
       .catch(() => {});
