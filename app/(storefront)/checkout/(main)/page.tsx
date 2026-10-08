@@ -47,6 +47,7 @@ export default function CheckoutPage() {
     currency: string;
     deliveryMethods: { id: string; name: string; description: string; price: number; enabled: boolean }[];
     paymentMethods: { id: "cash_on_delivery" | "mpesa"; name: string; description: string; enabled: boolean }[];
+    ctaButtons?: { addToCart?: { bgColor?: string; textColor?: string } };
   } | null>(null);
 
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function CheckoutPage() {
             currency: data.currency || "KES",
             deliveryMethods,
             paymentMethods,
+            ctaButtons: data.ctaButtons,
           });
           const enabledDelivery = deliveryMethods.filter((m: any) => m.enabled);
           if (enabledDelivery.length > 0) setSelectedDeliveryMethod(enabledDelivery[0].id);
@@ -254,7 +256,7 @@ export default function CheckoutPage() {
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event("cart:item-added"))}
-          className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          style={{ color: settings?.ctaButtons?.addToCart?.bgColor || "#2563eb" }} className="text-xs font-medium hover:underline"
         >
           ← Edit Cart
         </button>
@@ -517,7 +519,7 @@ export default function CheckoutPage() {
               </Collapsible>
             </div>
 
-            <Button className="w-full" type="submit" disabled={submitting}>
+            <Button className="w-full" type="submit" disabled={submitting} style={{ backgroundColor: settings?.ctaButtons?.addToCart?.bgColor || "#2563eb", color: settings?.ctaButtons?.addToCart?.textColor || "#ffffff" }}>
               {submitting ? "Placing Order..." : "Place Order"}
             </Button>
           </div>

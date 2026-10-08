@@ -16,7 +16,7 @@ export default function OpenCart({
       </svg>
 
       {quantity ? (
-        <div className="absolute right-0 top-0 -mr-1.5 -mt-1.5 flex h-4 w-4 items-center justify-center rounded-sm bg-blue-600 text-[10px] font-medium text-white md:-mr-2 md:-mt-2 md:text-[11px]">
+        <div className="absolute right-0 top-0 -mr-1.5 -mt-1.5 flex h-4 w-4 items-center justify-center rounded-sm bg-red-600 text-[10px] font-medium text-white md:-mr-2 md:-mt-2 md:text-[11px]">
           {quantity}
         </div>
       ) : null}

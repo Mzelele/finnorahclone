@@ -24,7 +24,7 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
-  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string }>({ shape: "rounded-full", weight: "font-semibold" });
+  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string; bgColor: string; textColor: string }>({ shape: "rounded-full", weight: "font-semibold", bgColor: "#2563eb", textColor: "#ffffff" });
 
   useEffect(() => {
     fetch("/api/storefront/settings")
@@ -35,6 +35,8 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
           setCtaStyle({
             shape: btn.style === "rectangle" ? "rounded-[4px]" : "rounded-full",
             weight: btn.fontWeight === "bold" ? "font-bold" : btn.fontWeight === "normal" ? "font-normal" : "font-semibold",
+            bgColor: btn.bgColor || "#2563eb",
+            textColor: btn.textColor || "#ffffff",
           });
         }
       })
@@ -302,13 +304,15 @@ export default function CartModal({ navbarDark }: { navbarDark?: boolean }) {
                       <Link
                         href="/cart"
                         onClick={closeCart}
-                        className={`flex w-full items-center justify-center border border-blue-600 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 ${ctaStyle.shape}`}
+                        style={{ borderColor: ctaStyle.bgColor, color: ctaStyle.bgColor }}
+                        className={`flex w-full items-center justify-center border py-3 text-sm font-semibold transition hover:opacity-80 ${ctaStyle.shape}`}
                       >
                         VIEW CART
                       </Link>
                       <button
                         onClick={handleCheckout}
-                        className={`flex w-full items-center justify-center gap-2 bg-blue-600 px-5 py-3.5 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
+                        style={{ backgroundColor: ctaStyle.bgColor, color: ctaStyle.textColor }}
+                        className={`flex w-full items-center justify-center gap-2 px-5 py-3.5 text-sm transition hover:opacity-90 ${ctaStyle.shape} ${ctaStyle.weight}`}
                       >
                         <Lock className="h-4 w-4" />
                         PROCEED TO CHECKOUT

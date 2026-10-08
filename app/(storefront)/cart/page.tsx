@@ -18,9 +18,11 @@ type MerchandiseSearchParams = { [key: string]: string };
 export default function CartPage() {
   const { cart, updateCartItem } = useCart();
   const router = useRouter();
-  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string }>({
+  const [ctaStyle, setCtaStyle] = useState<{ shape: string; weight: string; bgColor: string; textColor: string }>({
     shape: "rounded-full",
     weight: "font-semibold",
+    bgColor: "#2563eb",
+    textColor: "#ffffff",
   });
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function CartPage() {
                 : btn.fontWeight === "normal"
                 ? "font-normal"
                 : "font-semibold",
+            bgColor: btn.bgColor || "#2563eb",
+            textColor: btn.textColor || "#ffffff",
           });
         }
       })
@@ -80,7 +84,7 @@ export default function CartPage() {
               </span>
             )}
           </p>
-          <Link href="/shop" className="text-sm text-blue-600 hover:underline">
+          <Link href="/shop" style={{ color: ctaStyle.bgColor }} className="text-sm hover:underline">
             Continue Shopping
           </Link>
         </div>
@@ -192,7 +196,7 @@ export default function CartPage() {
               <div className="my-4 border-t border-neutral-200" />
               <button
                 onClick={handleCheckout}
-                className={`flex w-full items-center justify-center gap-2 bg-blue-600 px-5 py-3.5 text-sm text-white transition hover:bg-blue-700 ${ctaStyle.shape} ${ctaStyle.weight}`}
+                style={{ backgroundColor: ctaStyle.bgColor, color: ctaStyle.textColor }} className={`flex w-full items-center justify-center gap-2 px-5 py-3.5 text-sm transition hover:opacity-90 ${ctaStyle.shape} ${ctaStyle.weight}`}
               >
                 <Lock className="h-4 w-4" />
                 Proceed to Checkout
