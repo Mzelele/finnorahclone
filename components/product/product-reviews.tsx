@@ -42,6 +42,46 @@ function StarRating({ rating, onChange }: { rating: number; onChange?: (r: numbe
   );
 }
 
+function seededRandom(seed: string, offset: number = 0) {
+  let h = offset;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  }
+  return Math.abs(h) / 2147483647;
+}
+
+const DUMMY_NAMES = ["James K.", "Sarah M.", "David O.", "Aisha W.", "Peter N.", "Grace L.", "Samuel T.", "Faith A.", "Kevin M.", "Mercy J."];
+const DUMMY_COMMENTS = [
+  "Absolutely love this watch! Great quality and looks exactly as pictured.",
+  "Fast delivery and the product exceeded my expectations. Very happy with my purchase.",
+  "Excellent build quality, keeps perfect time. Worth every shilling!",
+  "Beautiful watch, got so many compliments already. Will definitely buy again.",
+  "Great value for money. The finish is premium and it feels solid on the wrist.",
+  "Very satisfied with this purchase. Looks even better in person.",
+  "Packaging was great, watch is stunning. Perfect gift for my husband.",
+  "Amazing quality at this price point. Highly recommend to anyone looking for a stylish watch.",
+  "Arrived on time and in perfect condition. The watch is gorgeous!",
+  "Exactly what I was looking for. The color matches perfectly and quality is superb.",
+];
+
+function getDummyReviews(handle: string, count: number): Review[] {
+  return Array.from({ length: count }).map((_, i) => {
+    const r1 = seededRandom(handle, i * 7 + 1);
+    const r2 = seededRandom(handle, i * 7 + 2);
+    const r3 = seededRandom(handle, i * 7 + 3);
+    const daysAgo = Math.floor(r3 * 60) + 1;
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return {
+      id: `dummy-${i}`,
+      name: DUMMY_NAMES[Math.floor(r1 * DUMMY_NAMES.length)],
+      rating: r2 > 0.7 ? 5 : 4,
+      comment: DUMMY_COMMENTS[Math.floor(r1 * DUMMY_COMMENTS.length)],
+      date: date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }),
+    };
+  });
+}
+
 export function ProductReviews({ productHandle }: { productHandle: string }) {
   const storageKey = `reviews:${productHandle}`;
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -51,6 +91,10 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
   const [rating, setRating] = useState(0);
   const [error, setError] = useState("");
 
+  const rand = seededRandom(productHandle);
+  const dummyCount = Math.floor(15 + rand * 85);
+  const dummyReviews = getDummyReviews(productHandle, Math.min(5, Math.floor(3 + rand * 3)));
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey);
@@ -58,9 +102,12 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
     } catch {}
   }, [storageKey]);
 
-  const avgRating = reviews.length
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-    : 0;
+  const allReviews = reviews.length > 0 ? reviews : dummyReviews;
+  const totalCount = reviews.length > 0 ? reviews.length : dummyCount;
+
+  const avgRating = allReviews.length
+    ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+    : 5;
 
   const handleSubmit = () => {
     if (!name.trim()) return setError("Please enter your name.");
@@ -87,14 +134,12 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
       <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50/70 px-4 py-3 md:px-8 md:py-4">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-neutral-900 md:text-2xl">Reviews</h2>
-          {reviews.length > 0 && (
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
               <StarRating rating={Math.round(avgRating)} />
               <span className="text-sm text-neutral-500">
-                {avgRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+                {avgRating.toFixed(1)} · {totalCount} reviews
               </span>
             </div>
-          )}
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -145,17 +190,8 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
         )}
 
         {/* Reviews list */}
-        {reviews.length === 0 ? (
-          <div className="flex flex-col items-center py-10 text-center">
-            <svg className="h-10 w-10 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="mt-3 text-sm font-semibold text-neutral-500">No reviews yet</p>
-            <p className="mt-1 text-xs text-neutral-400">Be the first to review this product</p>
-          </div>
-        ) : (
-          <ul className="flex flex-col divide-y divide-neutral-100">
-            {reviews.map((r) => (
+        <ul className="flex flex-col divide-y divide-neutral-100">
+            {allReviews.map((r) => (
               <li key={r.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -173,7 +209,6 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
               </li>
             ))}
           </ul>
-        )}
       </div>
     </div>
   );
