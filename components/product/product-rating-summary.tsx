@@ -19,7 +19,7 @@ export function ProductRatingSummary({ productHandle }: { productHandle: string 
     } catch {}
   }, [productHandle]);
 
-  const displayRating = avg ?? 0;
+  const displayRating = avg ?? 5;
 
   return (
     <div className="mb-2 flex items-center gap-1.5">
@@ -35,12 +35,10 @@ export function ProductRatingSummary({ productHandle }: { productHandle: string 
           </svg>
         ))}
       </div>
-      {count > 0 ? (
+      {count > 0 && (
         <span className="text-xs text-neutral-500">
           {displayRating.toFixed(1)} · {count} {count === 1 ? "review" : "reviews"}
         </span>
-      ) : (
-        <span className="text-xs text-neutral-400">No reviews yet</span>
       )}
     </div>
   );

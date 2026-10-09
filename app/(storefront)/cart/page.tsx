@@ -109,7 +109,14 @@ export default function CartPage() {
         ) : (
           <div className="flex flex-col gap-6 md:grid md:grid-cols-[1fr_340px] md:items-start">
             {/* Left: scrollable items */}
-            <div className="cart-scroll" style={{ maxHeight: "520px", overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+            <div className="relative">
+              <button
+                onClick={() => { const el = document.getElementById("cart-scroll"); if (el) el.scrollBy({ top: -120, behavior: "smooth" }); }}
+                className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 flex h-6 w-10 items-center justify-center rounded-full bg-white shadow-md border border-neutral-200 text-neutral-500 hover:text-neutral-900"
+              >
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+              </button>
+            <div id="cart-scroll" className="cart-scroll" style={{ maxHeight: "360px", overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
               <ul className="flex flex-col gap-3">
               {cart.lines
                 .sort((a, b) =>
@@ -198,6 +205,13 @@ export default function CartPage() {
                   );
                 })}
             </ul>
+            </div>
+              <button
+                onClick={() => { const el = document.getElementById("cart-scroll"); if (el) el.scrollBy({ top: 120, behavior: "smooth" }); }}
+                className="absolute -bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-6 w-10 items-center justify-center rounded-full bg-white shadow-md border border-neutral-200 text-neutral-500 hover:text-neutral-900"
+              >
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
             </div>
 
             <div className="md:sticky md:top-6">

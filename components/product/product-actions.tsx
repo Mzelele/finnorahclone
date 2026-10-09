@@ -340,17 +340,19 @@ export function ProductActions({
             </p>
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => { setShowDuplicateModal(false); window.dispatchEvent(new Event("cart:item-added")); }}
-                className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-neutral-900 bg-white px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
+              <a
+                href="/cart"
+                style={{ borderColor: resolvedCta.addToCart.bgColor, color: resolvedCta.addToCart.bgColor }}
+                className={clsx("flex w-full items-center justify-center gap-2 border-2 bg-white px-4 py-3 text-sm font-semibold transition hover:opacity-80", shapeClass(resolvedCta.addToCart.style))}
               >
                 View Cart
-              </button>
+              </a>
               <a
                 href="/checkout"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+                style={{ backgroundColor: resolvedCta.addToCart.bgColor || "#eb2424", color: resolvedCta.addToCart.textColor || "#ffffff" }}
+                className={clsx("flex w-full items-center justify-center gap-2 px-4 py-3 text-sm transition hover:opacity-90", shapeClass(resolvedCta.addToCart.style), weightClass(resolvedCta.addToCart.fontWeight))}
               >
-                Proceed to Checkout
+                <span style={{ color: resolvedCta.addToCart.textColor || "#ffffff" }}>Proceed to Checkout</span>
               </a>
             </div>
             <div className="mt-3 text-center">
