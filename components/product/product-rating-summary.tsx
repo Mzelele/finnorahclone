@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 
+function seededRandom(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  }
+  return Math.abs(h) / 2147483647;
+}
+
 export function ProductRatingSummary({ productHandle }: { productHandle: string }) {
   const [avg, setAvg] = useState<number | null>(null);
   const [count, setCount] = useState(0);
+
+  // Stable random defaults based on product handle
+  const rand = seededRandom(productHandle);
+  const defaultRating = parseFloat((4.5 + rand * 0.5).toFixed(1));
+  const defaultCount = Math.floor(15 + rand * 85);
 
   useEffect(() => {
     try {
@@ -19,7 +32,8 @@ export function ProductRatingSummary({ productHandle }: { productHandle: string 
     } catch {}
   }, [productHandle]);
 
-  const displayRating = avg ?? 5;
+  const displayRating = avg ?? defaultRating;
+  const displayCount = count > 0 ? count : defaultCount;
 
   return (
     <div className="mb-2 flex items-center gap-1.5">
@@ -35,11 +49,9 @@ export function ProductRatingSummary({ productHandle }: { productHandle: string 
           </svg>
         ))}
       </div>
-      {count > 0 && (
-        <span className="text-xs text-neutral-500">
-          {displayRating.toFixed(1)} · {count} {count === 1 ? "review" : "reviews"}
-        </span>
-      )}
+      <span className="text-xs text-neutral-500">
+        {typeof displayRating === "number" ? displayRating.toFixed(1) : "5.0"} · {displayCount} reviews
+      </span>
     </div>
   );
 }
