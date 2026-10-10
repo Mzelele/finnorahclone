@@ -58,7 +58,7 @@ const DUMMY_COMMENTS = [
   "Beautiful watch, got so many compliments already. Will definitely buy again.",
   "Great value for money. The finish is premium and it feels solid on the wrist.",
   "Very satisfied with this purchase. Looks even better in person.",
-  "Packaging was great, watch is stunning. Perfect gift for my husband.",
+  "Bought this as a gift and the recipient was thrilled. Packaging was beautiful too.",
   "Amazing quality at this price point. Highly recommend to anyone looking for a stylish watch.",
   "Arrived on time and in perfect condition. The watch is gorgeous!",
   "Exactly what I was looking for. The color matches perfectly and quality is superb.",
