@@ -102,8 +102,8 @@ export function ProductReviews({ productHandle }: { productHandle: string }) {
     } catch {}
   }, [storageKey]);
 
-  const allReviews = reviews.length > 0 ? reviews : dummyReviews;
-  const totalCount = reviews.length > 0 ? reviews.length : dummyCount;
+  const allReviews = [...reviews, ...dummyReviews];
+  const totalCount = reviews.length > 0 ? dummyCount + reviews.length : dummyCount;
 
   const avgRating = allReviews.length
     ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length

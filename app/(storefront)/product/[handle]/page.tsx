@@ -117,7 +117,17 @@ export default async function ProductPage(props: {
 
 
 
-        const productJsonLd = {
+        // Seeded dummy rating for structured data — matches what product-rating-summary.tsx shows
+    function seededRand(seed: string) {
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+      return Math.abs(h) / 2147483647;
+    }
+    const sr = seededRand(product.handle);
+    const dummyRating = parseFloat((4.5 + sr * 0.5).toFixed(1));
+    const dummyReviewCount = Math.floor(15 + sr * 85);
+
+    const productJsonLd = {
       "@context": "https://schema.org",
       "@type": "Product",
       name: product.title,
@@ -128,6 +138,13 @@ export default async function ProductPage(props: {
       brand: {
         "@type": "Brand",
         name: (product as any).brandName || product.title.split(" ")[0],
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: dummyRating,
+        reviewCount: dummyReviewCount,
+        bestRating: 5,
+        worstRating: 1,
       },
       offers: variantOffers.length > 1
         ? {
