@@ -52,15 +52,15 @@ function seededRandom(seed: string, offset: number = 0) {
 
 const DUMMY_NAMES = ["James K.", "Sarah M.", "David O.", "Aisha W.", "Peter N.", "Grace L.", "Samuel T.", "Faith A.", "Kevin M.", "Mercy J."];
 const DUMMY_COMMENTS = [
-  "Absolutely love this watch! Great quality and looks exactly as pictured.",
+  "Absolutely love it! Great quality and looks exactly as pictured.",
   "Fast delivery and the product exceeded my expectations. Very happy with my purchase.",
-  "Excellent build quality, keeps perfect time. Worth every shilling!",
-  "Beautiful watch, got so many compliments already. Will definitely buy again.",
-  "Great value for money. The finish is premium and it feels solid on the wrist.",
+  "Excellent build quality. Worth every shilling!",
+  "Beautiful product, got so many compliments already. Will definitely buy again.",
+  "Great value for money. The finish is premium and it feels solid.",
   "Very satisfied with this purchase. Looks even better in person.",
   "Bought this as a gift and the recipient was thrilled. Packaging was beautiful too.",
-  "Amazing quality at this price point. Highly recommend to anyone looking for a stylish watch.",
-  "Arrived on time and in perfect condition. The watch is gorgeous!",
+  "Amazing quality at this price point. Highly recommend to anyone looking for this.",
+  "Arrived on time and in perfect condition. Absolutely stunning!",
   "Exactly what I was looking for. The color matches perfectly and quality is superb.",
 ];
 
