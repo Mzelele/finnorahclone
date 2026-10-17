@@ -101,21 +101,22 @@ function getDummyReviews(handle: string, count: number): Review[] {
   const names = isWomens ? WOMENS_NAMES : isMens ? MENS_NAMES : NEUTRAL_NAMES;
   const comments = isWomens ? WOMENS_COMMENTS : isMens ? MENS_COMMENTS : NEUTRAL_COMMENTS;
 
-  // Track used name+comment combos to avoid duplicates
-  const usedCombos = new Set<string>();
+  const usedNames = new Set<number>();
+  const usedComments = new Set<number>();
   const reviews: Review[] = [];
   let attempt = 0;
 
-  while (reviews.length < count && attempt < 50) {
+  while (reviews.length < count && attempt < 100) {
     const i = attempt++;
-    const r1 = seededRandom(handle, i * 7 + 1);
-    const r2 = seededRandom(handle, i * 7 + 2);
-    const r3 = seededRandom(handle, i * 7 + 3);
+    const r1 = seededRandom(handle, i * 13 + 1);
+    const r2 = seededRandom(handle, i * 13 + 2);
+    const r3 = seededRandom(handle, i * 13 + 3);
+    const r4 = seededRandom(handle, i * 13 + 4);
     const nameIdx = Math.floor(r1 * names.length);
-    const commentIdx = Math.floor(seededRandom(handle, i * 7 + 4) * comments.length);
-    const combo = `${nameIdx}-${commentIdx}`;
-    if (usedCombos.has(combo)) continue;
-    usedCombos.add(combo);
+    const commentIdx = Math.floor(r4 * comments.length);
+    if (usedNames.has(nameIdx) || usedComments.has(commentIdx)) continue;
+    usedNames.add(nameIdx);
+    usedComments.add(commentIdx);
     const daysAgo = Math.floor(r3 * 90) + 1;
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
