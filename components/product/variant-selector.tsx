@@ -153,17 +153,21 @@ export function VariantSelector({
                 disabled={!isAvailableForSale}
                 title={`${option.name} ${value.name}${!isAvailableForSale ? " (Out of Stock)" : ""}`}
                 className={clsx(
-                                    "flex items-center justify-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition-all duration-300 ease-in-out md:min-w-[40px] md:px-2.5 md:py-1.5 md:text-sm",
+                  "relative flex items-center justify-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition-all duration-200 ease-in-out md:px-4 md:py-2 md:text-sm",
                   (option.values || []).length <= 4 ? "flex-1" : "min-w-max shrink-0 snap-start",
                   {
-                    "border-neutral-900 bg-neutral-900 text-white shadow-md": isActive,
-                    "border-neutral-200 text-neutral-900 hover:border-neutral-900 hover:bg-neutral-50": !isActive && isAvailableForSale,
-                    "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400 line-through": !isAvailableForSale,
+                    "border-neutral-900 bg-neutral-900 text-white shadow-lg scale-[1.04]": isActive,
+                    "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-700 hover:shadow-sm": !isActive && isAvailableForSale,
+                    "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-300 line-through": !isAvailableForSale,
                   },
                 )}
               >
+                {isActive && (
+                  <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
                 {value.name}
-                {isActive && <span aria-hidden="true">✓</span>}
               </button>
             );
           })}
