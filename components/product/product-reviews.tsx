@@ -50,36 +50,84 @@ function seededRandom(seed: string, offset: number = 0) {
   return Math.abs(h) / 2147483647;
 }
 
-const DUMMY_NAMES = ["James K.", "Sarah M.", "David O.", "Aisha W.", "Peter N.", "Grace L.", "Samuel T.", "Faith A.", "Kevin M.", "Mercy J."];
-const DUMMY_COMMENTS = [
+const MENS_NAMES = ["James K.", "David O.", "Peter N.", "Samuel T.", "Kevin M.", "Brian M.", "John W.", "Alex N.", "Michael O.", "Dennis K."];
+const WOMENS_NAMES = ["Sarah M.", "Aisha W.", "Grace L.", "Faith A.", "Mercy J.", "Linda N.", "Janet A.", "Wanjiku M.", "Amina H.", "Cynthia O."];
+const NEUTRAL_NAMES = ["Alex K.", "Jordan M.", "Chris O.", "Taylor N.", "Morgan W.", "Jamie A.", "Robin M.", "Casey L.", "Drew N.", "Blair K."];
+
+const MENS_COMMENTS = [
+  "Absolutely love it! Great quality and looks exactly as pictured.",
+  "Fast delivery and exceeded my expectations. Very happy with my purchase.",
+  "Excellent build quality. Worth every shilling!",
+  "Gets so many compliments. Will definitely buy again.",
+  "Great value for money. The finish is premium and feels solid.",
+  "Very satisfied with this purchase. Looks even better in person.",
+  "Bought this as a gift for a friend and he was thrilled. Packaging was great too.",
+  "Amazing quality at this price point. Highly recommend.",
+  "Arrived on time and in perfect condition. Absolutely love it!",
+  "Exactly what I was looking for. The color matches perfectly and quality is superb.",
+];
+
+const WOMENS_COMMENTS = [
+  "Absolutely love it! Great quality and looks exactly as pictured.",
+  "Fast delivery and exceeded my expectations. So happy with my purchase.",
+  "Excellent quality. Worth every shilling!",
+  "Gets so many compliments from my friends. Will definitely buy again.",
+  "Great value for money. The finish is premium and it looks stunning.",
+  "Very satisfied with this purchase. Looks even better in person.",
+  "Bought this as a gift for my friend and she absolutely loved it. Beautiful packaging too.",
+  "Amazing quality at this price point. Highly recommend to everyone.",
+  "Arrived on time and in perfect condition. Absolutely gorgeous!",
+  "Exactly what I was looking for. The color is perfect and quality is superb.",
+];
+
+const NEUTRAL_COMMENTS = [
   "Absolutely love it! Great quality and looks exactly as pictured.",
   "Fast delivery and the product exceeded my expectations. Very happy with my purchase.",
   "Excellent build quality. Worth every shilling!",
-  "Beautiful product, got so many compliments already. Will definitely buy again.",
+  "Great product, got so many compliments already. Will definitely buy again.",
   "Great value for money. The finish is premium and it feels solid.",
   "Very satisfied with this purchase. Looks even better in person.",
   "Bought this as a gift and the recipient was thrilled. Packaging was beautiful too.",
-  "Amazing quality at this price point. Highly recommend to anyone looking for this.",
+  "Amazing quality at this price point. Highly recommend.",
   "Arrived on time and in perfect condition. Absolutely stunning!",
   "Exactly what I was looking for. The color matches perfectly and quality is superb.",
 ];
 
 function getDummyReviews(handle: string, count: number): Review[] {
-  return Array.from({ length: count }).map((_, i) => {
+  // Pick name/comment pools based on handle keywords
+  const h = handle.toLowerCase();
+  const isWomens = h.includes("ladies") || h.includes("women") || h.includes("female") || h.includes("girl") || h.includes("couple");
+  const isMens = h.includes("men") || h.includes("gents") || h.includes("male") || h.includes("boy");
+  const names = isWomens ? WOMENS_NAMES : isMens ? MENS_NAMES : NEUTRAL_NAMES;
+  const comments = isWomens ? WOMENS_COMMENTS : isMens ? MENS_COMMENTS : NEUTRAL_COMMENTS;
+
+  // Track used name+comment combos to avoid duplicates
+  const usedCombos = new Set<string>();
+  const reviews: Review[] = [];
+  let attempt = 0;
+
+  while (reviews.length < count && attempt < 50) {
+    const i = attempt++;
     const r1 = seededRandom(handle, i * 7 + 1);
     const r2 = seededRandom(handle, i * 7 + 2);
     const r3 = seededRandom(handle, i * 7 + 3);
-    const daysAgo = Math.floor(r3 * 60) + 1;
+    const nameIdx = Math.floor(r1 * names.length);
+    const commentIdx = Math.floor(seededRandom(handle, i * 7 + 4) * comments.length);
+    const combo = `${nameIdx}-${commentIdx}`;
+    if (usedCombos.has(combo)) continue;
+    usedCombos.add(combo);
+    const daysAgo = Math.floor(r3 * 90) + 1;
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
-    return {
+    reviews.push({
       id: `dummy-${i}`,
-      name: DUMMY_NAMES[Math.floor(r1 * DUMMY_NAMES.length)],
-      rating: r2 > 0.7 ? 5 : 4,
-      comment: DUMMY_COMMENTS[Math.floor(r1 * DUMMY_COMMENTS.length)],
+      name: names[nameIdx],
+      rating: r2 > 0.6 ? 5 : 4,
+      comment: comments[commentIdx],
       date: date.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }),
-    };
-  });
+    });
+  }
+  return reviews;
 }
 
 export function ProductReviews({ productHandle }: { productHandle: string }) {
