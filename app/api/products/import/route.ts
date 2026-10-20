@@ -166,9 +166,9 @@ export async function POST(req: NextRequest) {
   void (async () => {
   for (const product of products) {
     current++;
-    const { sku } = product;
+    const sku = (product.sku || "").trim();
 
-    if (!sku || sku.trim() === "") {
+    if (!sku) {
       skipped++;
       continue;
     }
