@@ -176,12 +176,37 @@ export default function ImportExportPage() {
         body: formData,
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
         setImportError(data.error ?? "Import failed");
-      } else {
-        setImportResult(data as ImportResult);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.type === "progress") {
+              setImportProgress({ current: msg.current, total: msg.total });
+            } else if (msg.type === "done") {
+              setImportProgress({ current: msg.total, total: msg.total });
+              setTimeout(() => {
+                setImportResult(msg as ImportResult);
+                setImportProgress(null);
+              }, 400);
+            }
+          } catch {}
+        }
       }
     } catch {
       setImportError("Network error \u2014 please try again");

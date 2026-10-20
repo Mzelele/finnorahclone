@@ -99,7 +99,8 @@ function sanitizeContent(text: string): string {
   return result;
 }
 
-export const maxDuration = 120; // allow long imports
+export const maxDuration = 120;
+ // allow long imports
 
 export async function POST(req: NextRequest) {
   let formData: FormData;
@@ -154,8 +155,15 @@ export async function POST(req: NextRequest) {
   let skipped = 0;
   const total = products.length;
   let current = 0;
+
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  const send = (obj: object) => writer.write(enc.encode(JSON.stringify(obj) + "\n"));
+
   const errors: { sku: string; message: string }[] = [];
 
+  void (async () => {
   for (const product of products) {
     current++;
     const { sku } = product;
@@ -225,7 +233,14 @@ export async function POST(req: NextRequest) {
       console.error(`Error upserting SKU ${sku}:`, message);
       errors.push({ sku, message });
     }
+    await send({ type: "progress", current, total });
   }
 
-  return NextResponse.json({ success: true, imported, updated, skipped, errors, total });
+  await send({ type: "done", success: true, imported, updated, skipped, errors, total });
+  await writer.close();
+  })();
+
+  return new Response(readable, {
+    headers: { "Content-Type": "application/x-ndjson" },
+  });
 }
