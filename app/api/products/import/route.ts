@@ -1,8 +1,79 @@
 import { parseWebToffeeCSV } from "@/lib/csvParser";
 import { getProductsCollection } from "@/lib/productsDb";
+import { connectDB } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+function stripHtml(html: string): string {
+  if (!html) return "";
+  let text = html.replace(/<tr[^>]*>/gi, "\n").replace(/<\/tr>/gi, "");
+  text = text.replace(/<th[^>]*>/gi, "• ").replace(/<\/th>/gi, ": ");
+  text = text.replace(/<td[^>]*>/gi, "").replace(/<\/td>/gi, " ");
+  text = text.replace(/<br\s*[\/]?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<li[^>]*>/gi, "• ");
+  text = text.replace(/<\/li>/gi, "\n");
+  text = text.replace(/<[^>]+>/g, " ");
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
+
+function parseImageUrls(raw: string | string[] | undefined): string[] {
+  if (!raw) return [];
+  const items = Array.isArray(raw) ? raw : String(raw).split(",");
+  return items
+    .map((item) => {
+      // WebToffee format: "https://url.jpg ! alt : X ! title : Y ! desc : ! caption :"
+      const match = item.trim().match(/^(https?:\/\/[^\s!]+)/);
+      return match ? match[1].trim() : "";
+    })
+    .filter(Boolean);
+}
+
+async function resolveCategoryIds(
+  categoryString: string | string[] | undefined,
+  db: import("mongodb").Db
+): Promise<string[]> {
+  if (!categoryString) return [];
+  const names: string[] = [];
+  const raw = Array.isArray(categoryString) ? categoryString.join("|") : String(categoryString);
+  // "Smartphones|Smartphones > Vilaon phones" — split by pipe, take leaf name after ">"
+  for (const part of raw.split("|")) {
+    const leaf = part.includes(">") ? part.split(">").pop()!.trim() : part.trim();
+    if (leaf) names.push(leaf);
+  }
+  if (!names.length) return [];
+  const ids: string[] = [];
+  const col = db.collection("categories");
+  for (const name of names) {
+    const cat = await col.findOne({
+      $or: [
+        { name: { $regex: `^${name}$`, $options: "i" } },
+        { title: { $regex: `^${name}$`, $options: "i" } },
+        { slug: name.toLowerCase().replace(/\s+/g, "-") },
+      ],
+    });
+    if (cat) {
+      const id = cat._id.toString();
+      if (!ids.includes(id)) ids.push(id);
+    } else {
+      // Create the category so it's available immediately
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const result = await col.insertOne({ name, slug, title: name, createdAt: new Date() });
+      ids.push(result.insertedId.toString());
+    }
+  }
+  return ids;
+}
 
 export async function POST(req: NextRequest) {
   let formData: FormData;
@@ -28,7 +99,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Uploaded file is empty" }, { status: 400 });
   }
 
-  // Parse CSV — supports WooCommerce native, WebToffee real, and standard formats
   let products;
   try {
     products = parseWebToffeeCSV(fileContent);
@@ -41,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   if (products.length === 0) {
     return NextResponse.json(
-      { success: false, error: "No valid products found in CSV. Make sure the file has a SKU column and at least one data row." },
+      { success: false, error: "No valid products found in CSV. Make sure the file has a SKU/ID column and at least one data row." },
       { status: 400 },
     );
   }
@@ -66,17 +136,55 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Ensure name is not empty (fall back to SKU)
     if (!product.name || product.name.trim() === "") {
       product.name = sku;
     }
+
+    // Native WooCommerce mappings
+    const rawShortDesc = product.shortDescription || (product as Record<string, unknown>).post_excerpt as string || "";
+    const keyFeatures = rawShortDesc; // keep rich HTML for the Key Features editor field
+
+    const regularPrice = Number(product.regularPrice) || 0;
+    const salePrice = Number(product.salePrice) || 0;
+
+    // regular_price is always the "was" price (compare-at); sale_price is the selling price
+    const price = salePrice > 0 ? salePrice : regularPrice;
+    const compareAtPrice = regularPrice > 0 ? regularPrice : 0;
+
+    // Parse image URLs from WebToffee "url ! alt : x ! title : y" format
+    const parsedImages = parseImageUrls(product.images as string | string[] | undefined);
+
+    // Resolve category names to MongoDB ObjectIds
+    let resolvedCategories: string[] = [];
+    try {
+      const db = await connectDB();
+      const rawCats = (product as Record<string, unknown>)["tax:product_cat"] as string | undefined
+        || (Array.isArray(product.categories) ? product.categories.join("|") : product.categories as string | undefined);
+      resolvedCategories = await resolveCategoryIds(rawCats, db);
+    } catch { /* skip category resolution on error */ }
+
+    const enrichedProduct = {
+      ...product,
+      shortDescription: rawShortDesc,
+      description: product.description || (product as Record<string, unknown>).post_content as string || "",
+      keyFeatures,
+      features: keyFeatures,
+      regularPrice,
+      salePrice,
+      price,
+      compareAtPrice,
+      images: parsedImages.length > 0 ? parsedImages : (product.images || []),
+      ...(resolvedCategories.length > 0 ? { categories: resolvedCategories } : {}),
+      status: (product as any).published === 1 || (product as any).published === "1" ? "active" : "draft",
+      stock: (product.stock != null && product.stock !== "" ? Number(product.stock) : 1000),
+      updatedAt: new Date(),
+    };
 
     try {
       const result = await collection.updateOne(
         { sku },
         {
-          $set: { ...product, updatedAt: new Date() },
-          $setOnInsert: { createdAt: new Date() },
+          $set: enrichedProduct,$setOnInsert: { createdAt: new Date() },
         },
         { upsert: true },
       );

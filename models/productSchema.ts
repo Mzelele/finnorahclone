@@ -1,5 +1,6 @@
 export interface WooProduct {
   id?: string;
+  slug?: string;
   type?: string;
   sku: string;
   name: string;
@@ -8,6 +9,8 @@ export interface WooProduct {
   visibility?: string;
   shortDescription?: string;
   description?: string;
+  keyFeatures?: string;
+  features?: string;
   dateOnSaleFrom?: string;
   dateOnSaleTo?: string;
   taxStatus?: string;
@@ -23,6 +26,8 @@ export interface WooProduct {
   purchaseNote?: string;
   regularPrice?: number;
   salePrice?: number;
+  price?: number;
+  compareAtPrice?: number;
   categories?: string[];
   tags?: string[];
   shippingClass?: string;
@@ -37,5 +42,5 @@ export interface WooProduct {
   buttonText?: string;
   position?: number;
   attributes?: { name: string; value: string; visible: boolean; global: boolean }[];
-  metaData?: { key: string; value: string }[];
+  metaData?: { key: string; value: string; [key: string]: unknown }[];
 }

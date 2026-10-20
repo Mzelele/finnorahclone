@@ -45,14 +45,14 @@ export function ProductDescription({
         defaultVariant={product.defaultVariant}
       />
             {actions ? <div className="mt-2.5">{actions}</div> : null}
-      {product.productHighlights ? (
+      {(product.productHighlights || product.keyFeatures) ? (
         <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
             Key Features
           </h3>
           <Prose
             className="text-sm leading-relaxed text-neutral-700"
-            html={product.productHighlights}
+            html={product.productHighlights || product.keyFeatures || ""}
           />
         </div>
       ) : null}

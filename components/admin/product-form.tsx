@@ -159,11 +159,11 @@ export default function ProductForm({ productId }: { productId?: string }) {
             name: data.name || "",
             slug: data.slug || "",
             description: data.description || "",
-            productHighlights: data.productHighlights || "",
+            productHighlights: data.productHighlights || data.keyFeatures || data.shortDescription || "",
             type: data.type || "simple",
             status: data.status || "active",
             price: data.price || 0,
-            comparePrice: data.comparePrice || 0,
+            comparePrice: data.comparePrice || data.compareAtPrice || 0,
             cost: data.cost || 0,
             sku: data.sku || "",
             stock: data.stock || 0,
@@ -200,6 +200,7 @@ export default function ProductForm({ productId }: { productId?: string }) {
       status: statusOverride || form.status,
       type: activeTab as "simple" | "variable",
       categories: form.categories,
+      compareAtPrice: form.comparePrice,  // sync with import field name
     };
     // Remove old single-category field
     delete (payload as any).category;
@@ -663,12 +664,12 @@ export default function ProductForm({ productId }: { productId?: string }) {
           {/* Key Features */}
           <div className="space-y-2">
             <Label>Key Features</Label>
-            <textarea
-              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-400"
-              rows={3}
-              placeholder="Key features or selling points (e.g. Water resistant, Stainless steel, Free delivery...)"
+            <RichTextEditor
+              id="simple-key-features"
               value={form.productHighlights}
-              onChange={(e) => setForm((p) => ({ ...p, productHighlights: e.target.value }))}
+              onChange={(productHighlights) => setForm((p) => ({ ...p, productHighlights }))}
+              placeholder="Key features or selling points..."
+              rows={4}
             />
           </div>
 
@@ -890,12 +891,12 @@ export default function ProductForm({ productId }: { productId?: string }) {
           {/* Key Features */}
           <div className="space-y-2">
             <Label>Key Features</Label>
-            <textarea
-              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-400"
-              rows={3}
-              placeholder="Key features or selling points (e.g. Water resistant, Stainless steel, Free delivery...)"
+            <RichTextEditor
+              id="variable-key-features"
               value={form.productHighlights}
-              onChange={(e) => setForm((p) => ({ ...p, productHighlights: e.target.value }))}
+              onChange={(productHighlights) => setForm((p) => ({ ...p, productHighlights }))}
+              placeholder="Key features or selling points..."
+              rows={4}
             />
           </div>
 

@@ -138,11 +138,11 @@ export function mapProduct(doc: any): SFCCProduct {
     handle: doc.slug || doc._id.toString(),
     description: doc.description || "",
     descriptionHtml: doc.description || "",
-    productHighlights: doc.productHighlights || "",
+    productHighlights: doc.productHighlights || doc.keyFeatures || "",
     featuredImage: images.find((img) => img.url === featuredImageUrl) ||
       images[0] || { url: "", altText: imageAltText, height: 0, width: 0 },
     currencyCode: CURRENCY_CODE,
-    comparePrice: doc.comparePrice ? toMoney(doc.comparePrice) : undefined,
+    comparePrice: (doc.comparePrice || doc.compareAtPrice) ? toMoney(doc.comparePrice || doc.compareAtPrice) : undefined,
     priceRange: {
       minVariantPrice: toMoney(price),
       maxVariantPrice: toMoney(price),
