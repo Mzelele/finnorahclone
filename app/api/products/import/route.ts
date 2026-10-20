@@ -99,6 +99,8 @@ function sanitizeContent(text: string): string {
   return result;
 }
 
+export const maxDuration = 120; // allow long imports
+
 export async function POST(req: NextRequest) {
   let formData: FormData;
   try {
@@ -150,9 +152,12 @@ export async function POST(req: NextRequest) {
   let imported = 0;
   let updated = 0;
   let skipped = 0;
+  const total = products.length;
+  let current = 0;
   const errors: { sku: string; message: string }[] = [];
 
   for (const product of products) {
+    current++;
     const { sku } = product;
 
     if (!sku || sku.trim() === "") {
@@ -222,5 +227,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, imported, updated, skipped, errors });
+  return NextResponse.json({ success: true, imported, updated, skipped, errors, total });
 }

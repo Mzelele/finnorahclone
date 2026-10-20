@@ -117,6 +117,7 @@ export default function ImportExportPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [expandedErrors, setExpandedErrors] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Export state ──
@@ -341,6 +342,21 @@ export default function ImportExportPage() {
           )}
 
           {/* Results summary card */}
+          {importing && importProgress && (
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between text-sm text-neutral-500 dark:text-neutral-400">
+                <span>Importing products…</span>
+                <span>{importProgress.current} / {importProgress.total} ({Math.round((importProgress.current / importProgress.total) * 100)}%)</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
+                <div
+                  className="h-2 rounded-full bg-blue-500 transition-all duration-200"
+                  style={{ width: `${Math.round((importProgress.current / importProgress.total) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {importResult && (
             <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
               <h3 className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">
