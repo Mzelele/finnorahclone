@@ -24,7 +24,7 @@ type ResultSummary = {
   errors: number;
 };
 
-const ALL_FIELDS = ["title", "description", "descriptionHtml", "productHighlights"];
+const ALL_FIELDS = ["name", "description", "keyFeatures", "shortDescription"];
 
 const DEFAULT_RULES: Rule[] = [
   {
@@ -33,7 +33,7 @@ const DEFAULT_RULES: Rule[] = [
     replace: "",
     enabled: true,
     caseSensitive: false,
-    fields: ["description", "descriptionHtml", "productHighlights"],
+    fields: ["name", "description", "keyFeatures", "shortDescription"],
   },
   {
     id: "2",
@@ -41,7 +41,7 @@ const DEFAULT_RULES: Rule[] = [
     replace: "",
     enabled: true,
     caseSensitive: false,
-    fields: ["description", "descriptionHtml", "productHighlights"],
+    fields: ["name", "description", "keyFeatures", "shortDescription"],
   },
 ];
 
@@ -60,7 +60,7 @@ export default function SearchReplacePage() {
         replace: "",
         enabled: true,
         caseSensitive: false,
-        fields: ["description", "descriptionHtml", "productHighlights"],
+        fields: ["name", "description", "keyFeatures", "shortDescription"],
       },
     ]);
   };
