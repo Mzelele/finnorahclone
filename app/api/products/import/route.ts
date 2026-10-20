@@ -75,6 +75,30 @@ async function resolveCategoryIds(
   return ids;
 }
 
+
+function sanitizeContent(text: string): string {
+  if (!text) return text;
+  let result = text;
+
+  // Replace 254mobiles brand variations with Kings Tech
+  result = result.replace(/254[\s-]?mobiles/gi, "Kings Tech");
+  result = result.replace(/254MOBILES/g, "Kings Tech");
+
+  // Replace old phone number with new one
+  result = result.replace(/\+?254[\s]?111[\s]?503[\s]?604/g, "254 142 652 388");
+
+  // Replace 3rd Floor with 6th Floor in address context
+  result = result.replace(/3rd Floor/gi, "6th Floor");
+
+  // Remove stray anchor tags pointing to 254mobiles site
+  result = result.replace(/<a[^>]*254[^>]*>.*?<\/a>/gi, "");
+
+  // Remove stray Google/unrelated anchor tags
+  result = result.replace(/<a[^>]*https?:\/\/www\.google\.com[^>]*>.*?<\/a>/gi, "");
+
+  return result;
+}
+
 export async function POST(req: NextRequest) {
   let formData: FormData;
   try {
@@ -142,7 +166,7 @@ export async function POST(req: NextRequest) {
 
     // Native WooCommerce mappings
     const rawShortDesc = product.shortDescription || (product as Record<string, unknown>).post_excerpt as string || "";
-    const keyFeatures = rawShortDesc; // keep rich HTML for the Key Features editor field
+    const keyFeatures = sanitizeContent(rawShortDesc); // keep rich HTML for the Key Features editor field
 
     const regularPrice = Number(product.regularPrice) || 0;
     const salePrice = Number(product.salePrice) || 0;
@@ -166,7 +190,7 @@ export async function POST(req: NextRequest) {
     const enrichedProduct = {
       ...product,
       shortDescription: rawShortDesc,
-      description: product.description || (product as Record<string, unknown>).post_content as string || "",
+      description: sanitizeContent(product.description || (product as Record<string, unknown>).post_content as string || ""),
       keyFeatures,
       features: keyFeatures,
       regularPrice,
