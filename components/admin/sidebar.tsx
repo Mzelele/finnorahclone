@@ -9,6 +9,7 @@ import {
   Menu,
   Newspaper,
   Package,
+  Replace,
   Settings,
   ShoppingCart,
   Tag,
@@ -48,6 +49,7 @@ const navItems = [
   { href: "/admin/blogs", label: "Blogs", icon: Newspaper },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/tools/search-replace", label: "Search & Replace", icon: Replace },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/", label: "View Store", icon: StoreIcon, external: true },
 ];
