@@ -88,6 +88,18 @@ function sanitizeContent(text: string): string {
   // Replace 3rd Floor with 6th Floor in address context
   result = result.replace(/3rd Floor/gi, "6th Floor");
 
+  // Point text links to our domain; keep image/media URLs (wp-content) on the origin
+  result = result.replace(
+    /(\bhref\s*=\s*["'])https?:\/\/(?:www\.)?254-?mobiles\.co\.ke(?!\/wp-content\/)/gi,
+    "$1https://kings-techs.co.ke"
+  );
+
+  // WordPress product pages live under /buy/, ours under /product/
+  result = result.replace(
+    /(\bhref\s*=\s*["']https:\/\/kings-techs\.co\.ke)\/buy\//gi,
+    "$1/product/"
+  );
+
   return result;
 }
 
