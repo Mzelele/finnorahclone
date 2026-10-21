@@ -100,6 +100,14 @@ function sanitizeContent(text: string): string {
     "$1/product/"
   );
 
+  // Rewrite visible URL text (between tags only, never attributes); media URLs stay on origin
+  const fixText = (t: string) =>
+    t
+      .replace(/https?:\/\/(?:www\.)?254-?mobiles\.co\.ke(?!\/wp-content\/)/gi, "https://kings-techs.co.ke")
+      .replace(/(https:\/\/kings-techs\.co\.ke)\/buy\//gi, "$1/product/");
+  result = result.replace(/>([^<]+)</g, (_m, t) => ">" + fixText(t) + "<");
+  result = result.replace(/^([^<]+)/, (_m, t) => fixText(t));
+
   return result;
 }
 
