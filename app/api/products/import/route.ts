@@ -101,15 +101,7 @@ function sanitizeContent(text: string): string {
 
   // Remove stray Google/unrelated anchor tags
   result = result.replace(/<a[^>]*https?:\/\/www\.google\.com[^>]*>.*?<\/a>/gi, "");
-  result = result.replace(
-    /https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi,
-    "https://kings-techs.co.ke/wp-content/uploads/"
-  );
-  result = result.replace(
-    /https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi,
-    "https://kings-techs.co.ke/wp-content/uploads/"
-  );
-  result = result.replace(/<img[^>]*src="https?:\/\/(?!kings-techs)[^"]*"[^>]*\/?>\s*/gi, "");
+  // Keep 254-mobiles image URLs intact so they still load from the original server
 
   return result;
 }
