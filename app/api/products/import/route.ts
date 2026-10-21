@@ -101,6 +101,15 @@ function sanitizeContent(text: string): string {
 
   // Remove stray Google/unrelated anchor tags
   result = result.replace(/<a[^>]*https?:\/\/www\.google\.com[^>]*>.*?<\/a>/gi, "");
+  result = result.replace(
+    /https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi,
+    "https://kings-techs.co.ke/wp-content/uploads/"
+  );
+  result = result.replace(
+    /https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi,
+    "https://kings-techs.co.ke/wp-content/uploads/"
+  );
+  result = result.replace(/<img[^>]*src="https?:\/\/(?!kings-techs)[^"]*"[^>]*\/?>\s*/gi, "");
 
   return result;
 }
@@ -142,7 +151,14 @@ export async function POST(req: NextRequest) {
     const salePrice = Number(product.salePrice) || 0;
     const price = salePrice > 0 ? salePrice : regularPrice;
     const compareAtPrice = regularPrice > 0 ? regularPrice : 0;
-    const parsedImages = parseImageUrls(product.images);
+    const rawImageStr = (product.images || "").replace(
+      /https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi,
+      "https://kings-techs.co.ke/wp-content/uploads/"
+    ).replace(
+      /https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi,
+      "https://kings-techs.co.ke/wp-content/uploads/"
+    );
+    const parsedImages = parseImageUrls(rawImageStr);
 
     let resolvedCategories: string[] = [];
     try {

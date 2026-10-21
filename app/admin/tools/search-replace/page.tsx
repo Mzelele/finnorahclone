@@ -75,6 +75,22 @@ const DEFAULT_RULES: Rule[] = [
     caseSensitive: false,
     fields: ["description", "keyFeatures", "shortDescription"],
   },
+  {
+    id: "7",
+    search: "https?:\\/\\/254-mobiles\\.co\\.ke\\/wp-content\\/uploads\\/",
+    replace: "https://kings-techs.co.ke/wp-content/uploads/",
+    enabled: true,
+    caseSensitive: false,
+    fields: ["description", "keyFeatures", "shortDescription"],
+  },
+  {
+    id: "8",
+    search: "https?:\\/\\/254mobiles\\.co\\.ke\\/wp-content\\/uploads\\/",
+    replace: "https://kings-techs.co.ke/wp-content/uploads/",
+    enabled: true,
+    caseSensitive: false,
+    fields: ["description", "keyFeatures", "shortDescription"],
+  },
 ];
 
 export default function SearchReplacePage() {
