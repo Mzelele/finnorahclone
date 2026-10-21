@@ -417,7 +417,7 @@ async function getProductBySlugFromDB(slug: string) {
 export async function getProductBySlug(slug: string) {
   return unstable_cache(
     () => getProductBySlugFromDB(slug),
-    ["product-by-slug", slug],
+    ["product-by-slug-v2", slug],
     { revalidate: 3600, tags: ["products"] },
   )();
 }
