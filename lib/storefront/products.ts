@@ -383,7 +383,9 @@ export async function getAllProductSlugs() {
 
 async function getProductBySlugFromDB(slug: string) {
   const db = await connectDB();
-  const lookupConditions: any[] = [{ slug }];
+  let decodedSlug = slug;
+  try { decodedSlug = decodeURIComponent(slug); } catch {}
+  const lookupConditions: any[] = [{ slug: { $in: Array.from(new Set([decodedSlug, slug])) } }];
   if (ObjectId.isValid(slug)) {
     lookupConditions.push({ _id: new ObjectId(slug) });
   }
