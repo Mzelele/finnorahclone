@@ -33,7 +33,7 @@ function parseImageUrls(raw: string | string[] | undefined): string[] {
     .map((item) => {
       // WebToffee format: "https://url.jpg ! alt : X ! title : Y ! desc : ! caption :"
       const match = item.trim().match(/^(https?:\/\/[^\s!]+)/);
-      return match ? match[1].trim() : "";
+      return match?.[1]?.trim() ?? "";
     })
     .filter(Boolean);
 }
@@ -77,40 +77,16 @@ async function resolveCategoryIds(
 
 function sanitizeContent(text: string): string {
   if (!text) return text;
+  let result = text;
 
-  // Stash origin media URLs so no rule below can touch them
-  const saved: string[] = [];
-  let result = text.replace(
-    /https?:\/\/(?:www\.)?254-?mobiles\.co\.ke\/wp-content\/[^\s"'<>)]*/gi,
-    (url) => {
-      saved.push(url);
-      return `@@KEEP_${saved.length - 1}@@`;
-    }
-  );
-
-  // Replace 254mobiles domain links with kings-techs.co.ke (runs before brand rule)
-  result = result.replace(/https?:\/\/(?:www\.)?254-?mobiles\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
-
-  // Replace 254mobiles brand variations with Kings Tech
-  result = result.replace(/254[\s-]?mobiles/gi, "Kings Tech");
+  // Replace 254mobiles brand name with Kings Tech (never inside a domain/URL)
+  result = result.replace(/254[\s-]?mobiles(?!\.co\.ke)/gi, "Kings Tech");
 
   // Replace old phone number with new one
   result = result.replace(/\+?254[\s]?111[\s]?503[\s]?604/g, "254 142 652 388");
 
   // Replace 3rd Floor with 6th Floor in address context
   result = result.replace(/3rd Floor/gi, "6th Floor");
-
-  // Fix broken encoded URLs like "https://kings%20tech.co.ke/"
-  result = result.replace(/https?:\/\/kings(%20|\s)tech\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
-
-  // Remove stray anchor tags still pointing to 254mobiles (won't hit tel:/WhatsApp links)
-  result = result.replace(/<a[^>]*254-?mobiles[^>]*>[\s\S]*?<\/a>/gi, "");
-
-  // Remove stray Google/unrelated anchor tags
-  result = result.replace(/<a[^>]*https?:\/\/www\.google\.com[^>]*>[\s\S]*?<\/a>/gi, "");
-
-  // Restore origin media URLs untouched
-  result = result.replace(/@@KEEP_(\d+)@@/g, (_, i) => saved[Number(i)]);
 
   return result;
 }
@@ -154,8 +130,6 @@ export async function POST(req: NextRequest) {
     const compareAtPrice = regularPrice > 0 ? regularPrice : 0;
     const rawImageStr = typeof product.images === "string"
       ? product.images
-          .replace(/https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi, "https://kings-techs.co.ke/wp-content/uploads/")
-          .replace(/https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi, "https://kings-techs.co.ke/wp-content/uploads/")
       : product.images;
     const parsedImages = parseImageUrls(rawImageStr);
 
