@@ -118,6 +118,7 @@ export default function ImportExportPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [expandedErrors, setExpandedErrors] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
+  const cancelRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Export state ──
@@ -166,54 +167,70 @@ export default function ImportExportPage() {
     setImportResult(null);
     setImportError(null);
     setExpandedErrors(false);
+    cancelRef.current = false;
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const text = await file.text();
+      const { parseWebToffeeCSV } = await import("@/lib/csvParser");
+      const allProducts = parseWebToffeeCSV(text);
 
-      const res = await fetch("/api/products/import", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok || !res.body) {
-        const data = await res.json().catch(() => ({}));
-        setImportError(data.error ?? "Import failed");
+      if (allProducts.length === 0) {
+        setImportError("No valid products found in CSV.");
         return;
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      const CHUNK_SIZE = 50;
+      const total = allProducts.length;
+      let imported = 0, updated = 0, skipped = 0;
+      const errors: { sku: string; message: string }[] = [];
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const msg = JSON.parse(line);
-            if (msg.type === "progress") {
-              setImportProgress({ current: msg.current, total: msg.total });
-            } else if (msg.type === "done") {
-              setImportProgress({ current: msg.total, total: msg.total });
-              setTimeout(() => {
-                setImportResult(msg as ImportResult);
-                setImportProgress(null);
-              }, 400);
-            }
-          } catch {}
+      setImportProgress({ current: 0, total });
+
+      for (let i = 0; i < allProducts.length; i += CHUNK_SIZE) {
+        if (cancelRef.current) {
+          setImportError(`Import cancelled after ${i} of ${total} products.`);
+          return;
         }
+
+        const chunk = allProducts.slice(i, i + CHUNK_SIZE);
+        const res = await fetch("/api/products/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ products: chunk }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setImportError(data.error ?? "Import failed");
+          return;
+        }
+
+        const data = await res.json();
+        imported += data.imported ?? 0;
+        updated += data.updated ?? 0;
+        skipped += data.skipped ?? 0;
+        if (data.errors) errors.push(...data.errors);
+
+        setImportProgress({ current: Math.min(i + CHUNK_SIZE, total), total });
       }
+
+      setImportProgress({ current: total, total });
+      setTimeout(() => {
+        setImportResult({ success: true, imported, updated, skipped, errors, total });
+        setImportProgress(null);
+      }, 400);
+
     } catch {
-      setImportError("Network error \u2014 please try again");
+      if (!cancelRef.current) setImportError("Network error — please try again");
     } finally {
       setImporting(false);
     }
   };
+
+  const handleCancelImport = () => {
+    cancelRef.current = true;
+  };
+
 
   // ── Export handlers ──
 
@@ -369,9 +386,17 @@ export default function ImportExportPage() {
           {/* Results summary card */}
           {importing && importProgress && (
             <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex justify-between items-center text-sm text-neutral-500 dark:text-neutral-400">
                 <span>Importing products…</span>
-                <span>{importProgress.current} / {importProgress.total} ({Math.round((importProgress.current / importProgress.total) * 100)}%)</span>
+                <div className="flex items-center gap-3">
+                  <span>{importProgress.current} / {importProgress.total} ({Math.round((importProgress.current / importProgress.total) * 100)}%)</span>
+                  <button
+                    onClick={handleCancelImport}
+                    className="text-xs text-red-500 hover:text-red-600 font-medium underline underline-offset-2"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
               <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
                 <div

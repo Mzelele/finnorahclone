@@ -1,4 +1,3 @@
-import { parseWebToffeeCSV } from "@/lib/csvParser";
 import { getProductsCollection } from "@/lib/productsDb";
 import { connectDB } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
@@ -90,7 +89,14 @@ function sanitizeContent(text: string): string {
   // Replace 3rd Floor with 6th Floor in address context
   result = result.replace(/3rd Floor/gi, "6th Floor");
 
-  // Remove stray anchor tags pointing to 254mobiles site
+  // Replace 254mobiles domain links with kings-techs.co.ke
+  result = result.replace(/https?:\/\/254-mobiles\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
+  result = result.replace(/https?:\/\/254mobiles\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
+
+  // Fix broken encoded URLs like "https://kings%20tech.co.ke/"
+  result = result.replace(/https?:\/\/kings(%20|\s)tech\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
+
+  // Remove stray anchor tags still pointing to 254 domains after replacement
   result = result.replace(/<a[^>]*254[^>]*>.*?<\/a>/gi, "");
 
   // Remove stray Google/unrelated anchor tags
@@ -103,44 +109,15 @@ export const maxDuration = 120;
  // allow long imports
 
 export async function POST(req: NextRequest) {
-  let formData: FormData;
+  let products: any[];
   try {
-    formData = await req.formData();
+    const body = await req.json();
+    products = body.products;
+    if (!Array.isArray(products) || products.length === 0) {
+      return NextResponse.json({ success: false, error: "No products in request" }, { status: 400 });
+    }
   } catch {
-    return NextResponse.json({ success: false, error: "Invalid form data" }, { status: 400 });
-  }
-
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) {
-    return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
-  }
-
-  let fileContent: string;
-  try {
-    fileContent = await file.text();
-  } catch {
-    return NextResponse.json({ success: false, error: "Failed to read uploaded file" }, { status: 400 });
-  }
-
-  if (!fileContent.trim()) {
-    return NextResponse.json({ success: false, error: "Uploaded file is empty" }, { status: 400 });
-  }
-
-  let products;
-  try {
-    products = parseWebToffeeCSV(fileContent);
-  } catch (err) {
-    console.error("CSV parse error:", err);
-    return NextResponse.json({ success: false, error: "Failed to parse CSV file" }, { status: 400 });
-  }
-
-  console.log(`Parsed ${products.length} products from CSV`);
-
-  if (products.length === 0) {
-    return NextResponse.json(
-      { success: false, error: "No valid products found in CSV. Make sure the file has a SKU/ID column and at least one data row." },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
   let collection;
@@ -150,60 +127,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Database connection failed" }, { status: 500 });
   }
 
-  let imported = 0;
-  let updated = 0;
-  let skipped = 0;
-  const total = products.length;
-  let current = 0;
-
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const enc = new TextEncoder();
-  const send = (obj: object) => writer.write(enc.encode(JSON.stringify(obj) + "\n"));
-
+  let imported = 0, updated = 0, skipped = 0;
   const errors: { sku: string; message: string }[] = [];
 
-  void (async () => {
   for (const product of products) {
-    current++;
     const sku = (product.sku || "").trim();
+    if (!sku) { skipped++; continue; }
 
-    if (!sku) {
-      skipped++;
-      continue;
-    }
+    if (!product.name || product.name.trim() === "") product.name = sku;
 
-    if (!product.name || product.name.trim() === "") {
-      product.name = sku;
-    }
-
-    // Native WooCommerce mappings
-    const rawShortDesc = product.shortDescription || (product as Record<string, unknown>).post_excerpt as string || "";
-    const keyFeatures = sanitizeContent(rawShortDesc); // keep rich HTML for the Key Features editor field
-
+    const rawShortDesc = product.shortDescription || product.post_excerpt || "";
+    const keyFeatures = sanitizeContent(rawShortDesc);
     const regularPrice = Number(product.regularPrice) || 0;
     const salePrice = Number(product.salePrice) || 0;
-
-    // regular_price is always the "was" price (compare-at); sale_price is the selling price
     const price = salePrice > 0 ? salePrice : regularPrice;
     const compareAtPrice = regularPrice > 0 ? regularPrice : 0;
+    const parsedImages = parseImageUrls(product.images);
 
-    // Parse image URLs from WebToffee "url ! alt : x ! title : y" format
-    const parsedImages = parseImageUrls(product.images as string | string[] | undefined);
-
-    // Resolve category names to MongoDB ObjectIds
     let resolvedCategories: string[] = [];
     try {
       const db = await connectDB();
-      const rawCats = (product as Record<string, unknown>)["tax:product_cat"] as string | undefined
-        || (Array.isArray(product.categories) ? product.categories.join("|") : product.categories as string | undefined);
+      const rawCats = product["tax:product_cat"]
+        || (Array.isArray(product.categories) ? product.categories.join("|") : product.categories);
       resolvedCategories = await resolveCategoryIds(rawCats, db);
-    } catch { /* skip category resolution on error */ }
+    } catch { /* skip */ }
 
     const enrichedProduct = {
       ...product,
       shortDescription: rawShortDesc,
-      description: sanitizeContent(product.description || (product as Record<string, unknown>).post_content as string || ""),
+      description: sanitizeContent(product.description || product.post_content || ""),
       keyFeatures,
       features: keyFeatures,
       regularPrice,
@@ -212,7 +164,7 @@ export async function POST(req: NextRequest) {
       compareAtPrice,
       images: parsedImages.length > 0 ? parsedImages : (product.images || []),
       ...(resolvedCategories.length > 0 ? { categories: resolvedCategories } : {}),
-      status: (product as any).published === 1 || (product as any).published === "1" ? "active" : "draft",
+      status: product.published === 1 || product.published === "1" || product.published === "Published" ? "active" : "draft",
       stock: (product.stock != null && product.stock !== "" ? Number(product.stock) : 1000),
       updatedAt: new Date(),
     };
@@ -220,27 +172,16 @@ export async function POST(req: NextRequest) {
     try {
       const result = await collection.updateOne(
         { sku },
-        {
-          $set: enrichedProduct,$setOnInsert: { createdAt: new Date() },
-        },
+        { $set: enrichedProduct, $setOnInsert: { createdAt: new Date() } },
         { upsert: true },
       );
-
       if (result.upsertedCount > 0) imported++;
       else updated++;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error during upsert";
-      console.error(`Error upserting SKU ${sku}:`, message);
+      const message = err instanceof Error ? err.message : "Unknown error";
       errors.push({ sku, message });
     }
-    await send({ type: "progress", current, total });
   }
 
-  await send({ type: "done", success: true, imported, updated, skipped, errors, total });
-  await writer.close();
-  })();
-
-  return new Response(readable, {
-    headers: { "Content-Type": "application/x-ndjson" },
-  });
+  return NextResponse.json({ success: true, imported, updated, skipped, errors });
 }
