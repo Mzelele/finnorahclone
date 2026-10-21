@@ -5,6 +5,7 @@ import { useState, useRef, type DragEvent } from "react";
 // ── Types ──────────────────────────────────────────────────────────────
 
 interface ImportResult {
+  success: boolean;
   imported: number;
   updated: number;
   skipped: number;

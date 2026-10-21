@@ -151,13 +151,11 @@ export async function POST(req: NextRequest) {
     const salePrice = Number(product.salePrice) || 0;
     const price = salePrice > 0 ? salePrice : regularPrice;
     const compareAtPrice = regularPrice > 0 ? regularPrice : 0;
-    const rawImageStr = (product.images || "").replace(
-      /https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi,
-      "https://kings-techs.co.ke/wp-content/uploads/"
-    ).replace(
-      /https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi,
-      "https://kings-techs.co.ke/wp-content/uploads/"
-    );
+    const rawImageStr = typeof product.images === "string"
+      ? product.images
+          .replace(/https?:\/\/254-mobiles\.co\.ke\/wp-content\/uploads\//gi, "https://kings-techs.co.ke/wp-content/uploads/")
+          .replace(/https?:\/\/254mobiles\.co\.ke\/wp-content\/uploads\//gi, "https://kings-techs.co.ke/wp-content/uploads/")
+      : product.images;
     const parsedImages = parseImageUrls(rawImageStr);
 
     let resolvedCategories: string[] = [];
