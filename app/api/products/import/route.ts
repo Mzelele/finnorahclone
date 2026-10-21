@@ -89,11 +89,9 @@ function sanitizeContent(text: string): string {
   // Replace 3rd Floor with 6th Floor in address context
   result = result.replace(/3rd Floor/gi, "6th Floor");
 
-  // Replace 254mobiles domain links with kings-techs.co.ke (but NOT image/upload paths)
-  result = result.replace(/https?:\/\/254-mobiles\.co\.ke\/(?!wp-content)/gi, "https://kings-techs.co.ke/");
-  result = result.replace(/https?:\/\/254mobiles\.co\.ke\/(?!wp-content)/gi, "https://kings-techs.co.ke/");
-  result = result.replace(/https?:\/\/254-mobiles\.co\.ke(?=["' + "'" + '\s>])/gi, "https://kings-techs.co.ke");
-  result = result.replace(/https?:\/\/254mobiles\.co\.ke(?=["' + "'" + '\s>])/gi, "https://kings-techs.co.ke");
+  // Replace 254mobiles domain in href links only (not in img src)
+  result = result.replace(/(<a[^>]*href=["'`])https?:\/\/254-mobiles\.co\.ke\/?/gi, "$1https://kings-techs.co.ke/");
+  result = result.replace(/(<a[^>]*href=["'`])https?:\/\/254mobiles\.co\.ke\/?/gi, "$1https://kings-techs.co.ke/");
 
   // Fix broken encoded URLs like "https://kings%20tech.co.ke/"
   result = result.replace(/https?:\/\/kings(%20|\s)tech\.co\.ke\/?/gi, "https://kings-techs.co.ke/");
