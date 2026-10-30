@@ -28,6 +28,43 @@ export default function CheckoutPage() {
     "cash_on_delivery"
   );
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string>("standard");
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<null | {
+    code: string;
+    type: string;
+    discount: number;
+    freeShipping: boolean;
+  }>(null);
+
+  // If the cart changes after a code was applied (edit cart drawer), re-check it.
+  const cartSubtotalForCoupon = cart?.cost?.subtotalAmount?.amount;
+  useEffect(() => {
+    if (!appliedCoupon || cartSubtotalForCoupon === undefined) return;
+    let cancelled = false;
+    fetch("/api/storefront/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: appliedCoupon.code, subtotal: Number(cartSubtotalForCoupon) }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (d.valid) setAppliedCoupon(d);
+        else {
+          setAppliedCoupon(null);
+          setCouponError(d.error || "This discount code no longer applies");
+          setCouponOpen(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartSubtotalForCoupon]);
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -113,8 +150,42 @@ export default function CheckoutPage() {
   const subtotal = Number(cart.cost.subtotalAmount.amount);
   const isFreeShipping = (settings?.freeShippingThreshold ?? 5000) > 0 && subtotal >= (settings?.freeShippingThreshold ?? 5000);
   const activeDelivery = (settings?.deliveryMethods ?? []).find((m) => m.id === selectedDeliveryMethod);
-  const shippingCost = isFreeShipping ? 0 : (activeDelivery ? activeDelivery.price : settings?.shippingCost ?? 200);
-  const total = subtotal + shippingCost;
+  const couponDiscount = appliedCoupon ? Math.min(appliedCoupon.discount, subtotal) : 0;
+  const shippingCost = isFreeShipping || appliedCoupon?.freeShipping ? 0 : (activeDelivery ? activeDelivery.price : settings?.shippingCost ?? 200);
+  const total = Math.max(0, subtotal - couponDiscount) + shippingCost;
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError("Enter a discount code");
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/storefront/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon(data);
+        setCouponInput("");
+      } else {
+        setCouponError(data.error || "This discount code isn't valid");
+      }
+    } catch {
+      setCouponError("Could not check the code. Please try again.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -185,6 +256,7 @@ export default function CheckoutPage() {
           // whether to trigger the M-Pesa STK push.
           paymentMethod,
           deliveryMethod: selectedDeliveryMethod,
+          couponCode: appliedCoupon?.code || "",
           deliveryMethodName: activeDelivery?.name || "",
           subtotal,
           shippingCost,
@@ -269,6 +341,12 @@ export default function CheckoutPage() {
           <span className="text-neutral-600">Subtotal</span>
           <Price amount={subtotal.toString()} currencyCode={cart.cost.subtotalAmount.currencyCode} />
         </div>
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-green-700">
+            <span>Discount{appliedCoupon ? ` (${appliedCoupon.code})` : ""}</span>
+            <span>- KES {couponDiscount.toLocaleString()}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-neutral-600">Delivery</span>
           {shippingCost === 0 ? (
@@ -476,6 +554,65 @@ export default function CheckoutPage() {
                     );
                   })}
               </div>
+            </div>
+
+            {/* Discount code */}
+            <div className="space-y-2">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-green-800">{appliedCoupon.code} applied</p>
+                    <p className="text-xs text-green-700">
+                      {appliedCoupon.freeShipping ? "Free delivery" : `You save KES ${couponDiscount.toLocaleString()}`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                    className="shrink-0 text-xs font-medium text-neutral-500 underline hover:text-neutral-900"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : !couponOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setCouponOpen(true)}
+                  className="text-sm font-medium text-blue-600 hover:underline"
+                >
+                  Have a discount code?
+                </button>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <Input
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyCoupon();
+                        }
+                      }}
+                      placeholder="Discount code"
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={applyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                    >
+                      {couponLoading ? "Checking..." : "Apply"}
+                    </Button>
+                  </div>
+                  {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                </div>
+              )}
             </div>
 
             {/* Mobile order summary - immediately above place order button */}

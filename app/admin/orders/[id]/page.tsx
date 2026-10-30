@@ -9,12 +9,66 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Download, Loader2, Printer } from "lucide-react";
+import { downloadDocument, printDocument } from "@/lib/order-documents";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const orderStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+
+function DocActions({ order }: { order: any }) {
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const run = async (kind: "receipt" | "label", mode: "print" | "download") => {
+    setBusy(`${kind}-${mode}`);
+    try {
+      if (mode === "print") await printDocument(kind, order);
+      else await downloadDocument(kind, order);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not generate the PDF");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const groups = [
+    { kind: "receipt", title: "Receipt" },
+    { kind: "label", title: "Label" },
+  ] as const;
+
+  return (
+    <div className="flex items-center gap-2">
+      {groups.map((g) => (
+        <div
+          key={g.kind}
+          className="flex items-center gap-0.5 rounded-md border border-neutral-200 py-0.5 pl-2 pr-0.5 dark:border-neutral-700"
+        >
+          <span className="mr-0.5 text-xs font-medium text-neutral-500">{g.title}</span>
+          {(["print", "download"] as const).map((mode) => {
+            const loading = busy === `${g.kind}-${mode}`;
+            const Icon = loading ? Loader2 : mode === "print" ? Printer : Download;
+            return (
+              <button
+                key={mode}
+                type="button"
+                title={`${mode === "print" ? "Print" : "Download PDF of"} ${g.title.toLowerCase()}`}
+                aria-label={`${mode === "print" ? "Print" : "Download"} ${g.title.toLowerCase()}`}
+                onClick={() => run(g.kind, mode)}
+                disabled={busy !== null}
+                className="inline-flex h-7 items-center gap-1 rounded px-1.5 text-xs font-medium hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-800"
+              >
+                <Icon className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">{mode === "print" ? "Print" : "PDF"}</span>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -109,9 +163,12 @@ export default function OrderDetailPage() {
 
     return (
     <div className="space-y-6 overflow-x-hidden">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="min-w-0 truncate text-2xl font-bold">{order.orderNumber}</h1>
-        <OrderStatusBadge status={order.status} />
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="min-w-0 truncate text-lg font-bold sm:text-2xl">{order.orderNumber}</h1>
+          <OrderStatusBadge status={order.status} />
+        </div>
+        <DocActions order={order} />
       </div>
 
       <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
@@ -319,6 +376,14 @@ export default function OrderDetailPage() {
                 <span className="text-neutral-500">Subtotal</span>
                 <span className="shrink-0">KES {order.subtotal}</span>
               </div>
+              {Number(order.discount) > 0 && (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-neutral-500">
+                    Discount{order.coupon?.code ? ` (${order.coupon.code})` : ""}
+                  </span>
+                  <span className="shrink-0 text-green-600">- KES {order.discount}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-neutral-500">Delivery Cost</span>
                 <span className="shrink-0">KES {order.shippingCost}</span>

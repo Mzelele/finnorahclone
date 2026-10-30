@@ -3,6 +3,7 @@
 import { clsx } from "clsx";
 import {
   ArrowUpDown,
+  Ticket,
   FileText,
   FolderTree,
   LayoutDashboard,
@@ -43,6 +44,8 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/products/import-export", label: "Import / Export", icon: ArrowUpDown },
+  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
+  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/brands", label: "Brands", icon: Tag },
   { href: "/admin/pages", label: "Pages", icon: FileText },

@@ -1,5 +1,6 @@
 import { baseUrl } from "lib/utils";
 import { connectDB } from "@/lib/mongodb";
+import { claimCoupon, evaluateCoupon, releaseCoupon } from "@/lib/coupons";
 import { initiateStkPush } from "@/lib/mpesa";
 import { MpesaTransaction } from "@/models/MpesaTransaction";
 import { Order } from "@/models/Order";
@@ -75,8 +76,13 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Tracked outside the try so the catch can give a coupon use back if the order fails.
+  let claimedCouponId: any = null;
+  let orderSaved = false;
+  let dbRef: any = null;
   try {
     const db = await connectDB();
+    dbRef = db;
     const body = await req.json();
 
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
@@ -163,19 +169,76 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ---- 4) Pricing + discount code, computed on the server (browser totals are not trusted) ----
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const itemsSubtotal = body.items.reduce(
+      (sum: number, it: any) => sum + Number(it.price) * Number(it.quantity),
+      0,
+    );
+    const orderSubtotal =
+      Number.isFinite(itemsSubtotal) && itemsSubtotal > 0
+        ? round2(itemsSubtotal)
+        : Number(body.subtotal) || 0;
+    let orderShipping = Math.max(0, Number(body.shippingCost) || 0);
+    let orderDiscount = 0;
+    let appliedCoupon: { code: string; type: string; value: number } | null = null;
+
+    const couponCode = String(body.couponCode || "").trim();
+    if (couponCode) {
+      const result = await evaluateCoupon(db, couponCode, orderSubtotal);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      if (!(await claimCoupon(db, result.coupon._id))) {
+        return NextResponse.json({ error: "This code has been fully redeemed" }, { status: 400 });
+      }
+      claimedCouponId = result.coupon._id;
+      orderDiscount = result.discount;
+      if (result.freeShipping) orderShipping = 0;
+      appliedCoupon = {
+        code: result.coupon.code,
+        type: result.coupon.type,
+        value: Number(result.coupon.value) || 0,
+      };
+    }
+    const orderTotal = round2(Math.max(0, orderSubtotal - orderDiscount) + orderShipping);
+
     const customerEmail = email || (phone ? `${phone}@placeholder.local` : `guest-${Date.now()}@placeholder.local`);
 
-    let customer = await db.collection("customers").findOne({ $or: [{ email: customerEmail }, { phone }] });
-    if (customer && email && customer.email !== email) {
-      await db.collection("customers").updateOne({ _id: customer._id }, { $set: { email: email } });
-      customer.email = email;
+    // Find or create the customer: email first, then phone. Never hand a customer an
+    // email that another customer already owns (that caused the E11000 error).
+    const customers = db.collection("customers");
+    let customer: any = await customers.findOne({ email: customerEmail });
+    if (!customer && phone) {
+      customer = await customers.findOne({ phone });
+      if (customer && email && customer.email !== email) {
+        try {
+          await customers.updateOne(
+            { _id: customer._id },
+            { $set: { email, updatedAt: new Date() } },
+          );
+          customer.email = email;
+        } catch (err: any) {
+          if (err?.code !== 11000) throw err; // email taken by someone else: keep this record
+        }
+      }
     }
     if (!customer) {
       const now = new Date();
-      const result = await db.collection("customers").insertOne({
-        email: customerEmail, name: fullName, phone: phone || "", createdAt: now, updatedAt: now,
-      });
-      customer = { _id: result.insertedId, email: customerEmail, name: fullName, phone: phone || "" };
+      try {
+        const inserted = await customers.insertOne({
+          email: customerEmail,
+          name: fullName,
+          phone: phone || "",
+          createdAt: now,
+          updatedAt: now,
+        });
+        customer = { _id: inserted.insertedId, email: customerEmail, name: fullName, phone: phone || "" };
+      } catch (err: any) {
+        if (err?.code !== 11000) throw err;
+        customer = await customers.findOne({ email: customerEmail }); // created by a parallel request
+        if (!customer) throw err;
+      }
     }
 
     for (const item of body.items) {
@@ -220,9 +283,11 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         price: item.price,
       })),
-      subtotal: body.subtotal,
-      shippingCost: body.shippingCost || 0,
-            total: body.total,
+      subtotal: orderSubtotal,
+      discount: orderDiscount,
+      coupon: appliedCoupon,
+      shippingCost: orderShipping,
+      total: orderTotal,
       shippingAddress: { fullName, phone: phone || "", address, city, region, country, notes: notes || "" },
       adminNotes: "",
       statusHistory: [{ status: "pending", note: "Order placed", changedAt: now }],
@@ -231,6 +296,7 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await db.collection("orders").insertOne(orderData);
+    orderSaved = true;
 
     // Record the successful order for rate limiting
     recordOrder(clientIp);
@@ -264,13 +330,13 @@ export async function POST(req: NextRequest) {
     const orderId = result.insertedId.toString();
     let checkoutRequestId: string | null = null;
 
-    if (paymentMethod === "mpesa") {
+    if (paymentMethod === "mpesa" && orderTotal > 0) {
       try {
         // Reuse the shared Daraja helper (token/password/timestamp/payload all
         // live in lib/mpesa.ts) so we don't duplicate any of that logic here.
         const daraja = await initiateStkPush({
           phoneNumber: phone || "", // the customer's phone, e.g. "0712345678"
-          amount: body.total, // amount in KES
+          amount: orderTotal, // amount in KES
           accountReference: orderNumber, // shown on the STK prompt
           description: "Order payment",
         });
@@ -291,7 +357,7 @@ export async function POST(req: NextRequest) {
               merchantRequestId,
               orderId, // <- link the transaction to its Order
               phoneNumber: phone || "",
-              amount: Number(body.total),
+              amount: orderTotal,
               accountReference: orderNumber,
             });
           } catch (txError) {
@@ -329,6 +395,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Orders API error:", error);
+    if (claimedCouponId && !orderSaved && dbRef) {
+      await releaseCoupon(dbRef, claimedCouponId).catch(() => {});
+    }
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
