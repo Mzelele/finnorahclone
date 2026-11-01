@@ -33,10 +33,11 @@ function DocActions({ order }: { order: any }) {
     }
   };
 
+
   const groups = [
-    { kind: "receipt", title: "Receipt" },
-    { kind: "label", title: "Label" },
-  ] as const;
+    { kind: "receipt" as const, title: "Receipt" },
+    { kind: "label" as const, title: "Label" },
+  ];
 
   return (
     <div className="flex items-center gap-2">

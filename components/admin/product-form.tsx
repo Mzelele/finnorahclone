@@ -79,7 +79,7 @@ export default function ProductForm({ productId }: { productId?: string }) {
   const [aiRawText, setAiRawText] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
-  const [aiProducts, setAiProducts] = useState<{ name: string; description: string; keyFeatures: string[] }[]>([]);
+  const [aiProducts, setAiProducts] = useState<{ name: string; price?: string | null; description: string; keyFeatures: string[]; aiOverview?: string }[]>([]);
   const [aiSelectedIndex, setAiSelectedIndex] = useState(0);
   const [aiProductPickerOpen, setAiProductPickerOpen] = useState(false);
 
@@ -457,13 +457,22 @@ export default function ProductForm({ productId }: { productId?: string }) {
 
       // Populate form with the first product
       const product = products[0];
+      // Parse price from AI — strip currency symbols, keep number
+      const parsedPrice = (() => {
+        if (!product.price) return undefined;
+        const num = parseFloat(product.price.replace(/[^0-9.]/g, ""));
+        return isNaN(num) ? undefined : num;
+      })();
+
       setForm((prev) => ({
         ...prev,
-                name: product.name || prev.name,
-        description: product.description || prev.description,
-        productHighlights: Array.isArray(product.keyFeatures)
-          ? product.keyFeatures.map((f: string) => "• " + f).join("\n")
+        name: product.name || prev.name,
+        description: product.aiOverview || product.description || prev.description,
+        productHighlights: Array.isArray(product.keyFeatures) && product.keyFeatures.length > 0
+          ? '<ul style="list-style:none;padding:0">' + product.keyFeatures.map((f: string) => `<li>${f}</li>`).join("") + "</ul>"
           : prev.productHighlights,
+        price: parsedPrice ?? prev.price,
+        comparePrice: parsedPrice ? parsedPrice + 1000 : prev.comparePrice,
         slug: generateSlug(product.name || ""),
         sku: generateSKU(product.name || ""),
       }));
@@ -489,13 +498,20 @@ export default function ProductForm({ productId }: { productId?: string }) {
   const applyAiProduct = (index: number) => {
     const product = aiProducts[index];
     if (!product) return;
+    const parsedPrice = (() => {
+      if (!product.price) return undefined;
+      const num = parseFloat(product.price.replace(/[^0-9.]/g, ""));
+      return isNaN(num) ? undefined : num;
+    })();
     setForm((prev) => ({
       ...prev,
       name: product.name || prev.name,
-      description: product.description || prev.description,
-      productHighlights: Array.isArray(product.keyFeatures)
-        ? product.keyFeatures.map((f) => "• " + f).join("\n")
+      description: product.aiOverview || product.description || prev.description,
+      productHighlights: Array.isArray(product.keyFeatures) && product.keyFeatures.length > 0
+        ? '<ul style="list-style:none;padding:0">' + product.keyFeatures.map((f) => `<li>${f}</li>`).join("") + "</ul>"
         : prev.productHighlights,
+      price: parsedPrice ?? prev.price,
+      comparePrice: parsedPrice ? parsedPrice + 1000 : prev.comparePrice,
       slug: generateSlug(product.name || ""),
       sku: generateSKU(product.name || ""),
     }));

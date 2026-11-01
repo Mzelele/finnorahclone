@@ -1,50 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "openai/gpt-4o-mini";
+const MODEL = "openrouter/auto";
 
-const SYSTEM_PROMPT = `You are an expert e-commerce copywriter for a Kenyan retail store specializing in watches, perfumes, and fashion accessories.
+const SYSTEM_PROMPT = `You are an expert e-commerce copywriter and SEO specialist for a Kenyan online retail store. Your goal is to generate product content that is optimized to appear in Google AI Overviews and answer-based search results.
 
-Your task is to extract product details from the provided raw text (often from social media, WhatsApp broadcasts, or inventory lists).
+Your task is to extract product details from raw input text (WhatsApp broadcasts, social media captions, inventory lists) and generate rich, AI-Overview-ready product content.
 
 STRICT RULES:
-1. Extract ONLY factual product information: name, features, specifications, colors, materials, design details.
-2. IGNORE and DISCARD: prices (KSh, USD, any currency), phone numbers, contact details, shop locations/addresses, emojis, WhatsApp links, social media handles, promotional hype (e.g., "RESTOCK ALERT", "HOT DEAL", "LIMITED STOCK", "ORDER NOW"), and any other marketing fluff.
-3. If the input contains multiple clearly distinct products (e.g., separate WhatsApp broadcast messages about different items), return ALL of them as a JSON array. If you're unsure whether products are distinct, default to returning a single product in an array.
-4. For the "name" field, generate an SEO-optimized product title (NOT a plain product name). Follow these format rules:
+1. Extract factual product info: name, features, specifications, colors, materials, design details, and price if present.
+2. IGNORE and DISCARD: phone numbers, contact details, shop locations/addresses, emojis, WhatsApp links, social media handles, promotional hype (e.g., "RESTOCK ALERT", "HOT DEAL", "LIMITED STOCK", "ORDER NOW").
+3. KEEP prices — if a price is mentioned (KSh, KES, USD, etc.), include it in the aiOverview and as the "price" field.
+4. If the input contains multiple clearly distinct products, return ALL as a JSON array. If unsure, return a single product in an array.
+5. For the "name" field, generate an SEO-optimized product title:
    - Format: [Brand] [Model Number] [Spec 1] [Spec 2] [Material/Type] [Gender] [Category]
-   - NO dashes, NO hyphens, NO punctuation separating the title — it flows as one natural phrase
+   - NO dashes, NO hyphens, NO punctuation separating the title
    - Model number MUST follow brand name immediately if present
-   - Weave the 2 best specs naturally into the title as adjectives/descriptors before the product type
-   - Gender and category come at the end
-   - Examples of CORRECT format:
-     • "OLEVS 6898 Water Resistant Genuine Leather Mens Watch"
-     • "OLEVS 6898 Day Date Display Water Resistant Leather Mens Watch"
-     • "Binbond 203 Chronograph Calendar Stainless Steel Mens Watch"
-     • "Gedi Vintage Water Resistant Genuine Leather Ladies Watch"
-     • "TEVISE Automatic Mechanical Chronograph Stainless Steel Mens Watch"
-   - Max 70 characters
-   - No emojis, no prices, no dashes, no promo words
-5. For "description", write 2-4 professional, sales-friendly sentences. Use polished English suitable for a retail website. Focus on benefits and quality, not price or urgency.
-6. For "keyFeatures", list 3-7 bullet-style short phrases highlighting specs, materials, design elements, and functional features. Each should be a concise phrase (no full sentences with periods).
+   - Examples: "OLEVS 6898 Water Resistant Genuine Leather Mens Watch", "Samsung 65 Inch 4K QLED Smart TV"
+   - Max 70 characters, no emojis, no promo words
+6. For "description", write 2-4 professional sentences focused on benefits and quality.
+7. For "keyFeatures", list 3-7 concise bullet phrases highlighting specs, materials, and functions.
+7. For "keyFeatures", return 4-8 items. Each item should start with a relevant emoji followed by a short descriptive phrase. Choose emojis that match the feature (e.g. ⌚ for watch type, 🛡️ for water resistance, ⚙️ for movement type, 🔋 for battery, 🎨 for colors, 📅 for calendar/date, 🌙 for luminous hands, 🔗 for strap material, 🎁 for packaging). Example: "⌚ Chronograph dial with sub-dials", "🛡️ 30m water resistant", "🔗 Genuine leather strap". IMPORTANT: If the input mentions any gift box, gift bag, packaging, or unboxing experience (regardless of price), always replace it with exactly: "🎁 Packaged in a Nice Gift Bag and Gift Box". Never include packaging prices or costs in keyFeatures.
 
-OUTPUT FORMAT — You MUST output ONLY valid JSON, nothing else. No markdown code fences, no preamble, no explanation. ALWAYS return an array of products (even for a single product).
+8. For "aiOverview", write a rich HTML-structured description optimized for Google AI Overviews and on-page SEO. Use the following structure:
+   - <h2> tag: "Buy [Product Name] in Kenya – Price & Where to Order"
+   - Opening paragraph (2-3 sentences): introduce the product, mention price in Kenya, mention Cash on Delivery
+   - <h3> tag: "Key Features"
+   - <ul> with <li> tags: list 4-6 key features as short phrases (no emojis in this list)
+   - <h3> tag: "Why Buy from Us?"
+   - <p> tag: 2 sentences about fast nationwide delivery, genuine products, Cash on Delivery, easy WhatsApp ordering
+   - <h3> tag: "How to Order"
+   - <p> tag: 1-2 sentences with a CTA mentioning WhatsApp or website ordering
+   - Total length: 180-250 words
+   - Write in natural, knowledgeable English — sound like a helpful human answer
+   - Naturally weave in Kenya-specific keywords: "price in Kenya", "buy in Kenya", "Cash on Delivery Kenya", "delivery across Kenya"
+
+OUTPUT FORMAT — ONLY valid JSON, no markdown, no preamble, no explanation. ALWAYS return an array.
 
 [
   {
     "name": "string",
+    "price": "string or null",
     "description": "string",
-    "keyFeatures": ["string", "string", ...]
+    "keyFeatures": ["string", ...],
+    "aiOverview": "string"
   }
 ]
 
-If you absolutely cannot find any product information, return an empty array:
-[]`;
+If no product info found, return: []`;
 
 interface ProductInfo {
   name: string;
+  price: string | null;
   description: string;
   keyFeatures: string[];
+  aiOverview: string;
 }
 
 function validateSingleProduct(data: unknown): ProductInfo {
@@ -55,12 +65,14 @@ function validateSingleProduct(data: unknown): ProductInfo {
   const obj = data as Record<string, unknown>;
 
   const name = typeof obj.name === "string" ? obj.name.trim() : "";
+  const price = typeof obj.price === "string" ? obj.price.trim() : null;
   const description = typeof obj.description === "string" ? obj.description.trim() : "";
   const keyFeatures = Array.isArray(obj.keyFeatures)
     ? obj.keyFeatures.filter((f): f is string => typeof f === "string").map((f) => f.trim())
     : [];
+  const aiOverview = typeof obj.aiOverview === "string" ? obj.aiOverview.trim() : "";
 
-  return { name, description, keyFeatures };
+  return { name, price, description, keyFeatures, aiOverview };
 }
 
 function validateProducts(data: unknown): ProductInfo[] {
@@ -146,8 +158,8 @@ export async function POST(req: NextRequest) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: rawText },
         ],
-        temperature: 0.3,
-        max_tokens: 1000,
+        temperature: 0.4,
+        max_tokens: 1800,
       }),
     });
   } catch (error) {

@@ -734,6 +734,11 @@ async function build(kind: DocKind, order: any, paper?: Paper): Promise<PDF> {
   return doc;
 }
 
+export async function imageDocument(kind: DocKind, order: any, paper?: Paper): Promise<Blob> {
+  const doc = await build(kind, order, paper);
+  return doc.output("blob") as unknown as Blob;
+}
+
 export async function downloadDocument(
   kind: DocKind,
   order: any,
