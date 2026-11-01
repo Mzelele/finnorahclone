@@ -77,10 +77,10 @@ export default function CheckoutPage() {
     website: "", // honeypot anti-spam field (hidden from humans)
   });
 
-  const [couponsEnabled, setCouponsEnabled] = useState(true);
+  const [couponsEnabled, setCouponsEnabled] = useState(false);
 
   useEffect(() => {
-    fetch("/api/storefront/settings")
+    fetch("/api/storefront/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setCouponsEnabled(d?.couponsEnabled !== false))
       .catch(() => {});
@@ -97,7 +97,7 @@ export default function CheckoutPage() {
   } | null>(null);
 
   useEffect(() => {
-    fetch("/api/storefront/settings")
+    fetch("/api/storefront/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (!data.error) {
