@@ -44,6 +44,7 @@ type SettingsData = {
   shopMetaDescription: string;
   shippingCost: number;
   freeShippingThreshold: number;
+  couponsEnabled: boolean;
   shippingNote: string;
   deliveryMethods: { id: string; name: string; description: string; price: number; enabled: boolean }[];
   deliveryRegions: string;
@@ -92,6 +93,7 @@ const defaultSettings: SettingsData = {
   shopMetaDescription: "",
   shippingCost: 200,
   freeShippingThreshold: 5000,
+  couponsEnabled: true,
   shippingNote: "",
   deliveryMethods: [
     { id: "standard", name: "Standard Delivery", description: "2-3 business days", price: 200, enabled: true },
@@ -186,6 +188,7 @@ export default function SettingsPage() {
               data.heroAutoplayInterval === 5000 ? 5000 : 3000,
             shippingCost: data.shippingCost ?? 200,
             freeShippingThreshold: data.freeShippingThreshold ?? 5000,
+            couponsEnabled: data.couponsEnabled ?? true,
             faviconUrl: data.faviconUrl ?? "",
             logoIconUrl: data.logoIconUrl ?? "",
             showLogoIcon: data.showLogoIcon ?? true,
@@ -230,6 +233,7 @@ export default function SettingsPage() {
       showLogoIcon: settings.showLogoIcon,
       shippingCost: Number(settings.shippingCost) || 0,
       freeShippingThreshold: Number(settings.freeShippingThreshold) || 0,
+      couponsEnabled: settings.couponsEnabled ?? true,
       deliveryRegions: settings.deliveryRegions
         .split(",")
         .map((s) => s.trim())
@@ -522,6 +526,20 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="space-y-2">
+
+                <div className="flex items-center justify-between rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+                  <div>
+                    <p className="text-sm font-medium">Coupon / Discount Codes</p>
+                    <p className="text-xs text-neutral-500">Show the &ldquo;Have a discount code?&rdquo; field at checkout</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateField("couponsEnabled", !settings.couponsEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.couponsEnabled ? "bg-black dark:bg-white" : "bg-neutral-300 dark:bg-neutral-600"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-black transition-transform ${settings.couponsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
             <Label>Delivery cost note (shown at checkout)</Label>
             <Textarea
               value={settings.shippingNote}

@@ -183,7 +183,8 @@ export async function POST(req: NextRequest) {
     let orderDiscount = 0;
     let appliedCoupon: { code: string; type: string; value: number } | null = null;
 
-    const couponCode = String(body.couponCode || "").trim();
+    const couponSettings = await db.collection("settings").findOne({ storeId: "default" });
+    const couponCode = couponSettings?.couponsEnabled === false ? "" : String(body.couponCode || "").trim();
     if (couponCode) {
       const result = await evaluateCoupon(db, couponCode, orderSubtotal);
       if (!result.ok) {

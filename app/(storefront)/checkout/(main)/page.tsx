@@ -77,6 +77,15 @@ export default function CheckoutPage() {
     website: "", // honeypot anti-spam field (hidden from humans)
   });
 
+  const [couponsEnabled, setCouponsEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/storefront/settings")
+      .then((r) => r.json())
+      .then((d) => setCouponsEnabled(d?.couponsEnabled !== false))
+      .catch(() => {});
+  }, []);
+
   const [settings, setSettings] = useState<{
     shippingCost: number;
     freeShippingThreshold: number;
@@ -557,6 +566,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Discount code */}
+            {couponsEnabled && (
             <div className="space-y-2">
               {appliedCoupon ? (
                 <div className="flex items-center justify-between gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
@@ -614,6 +624,7 @@ export default function CheckoutPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Mobile order summary - immediately above place order button */}
             <div className="md:hidden border border-neutral-200 rounded-lg overflow-hidden">

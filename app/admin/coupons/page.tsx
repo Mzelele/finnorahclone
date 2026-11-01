@@ -100,6 +100,36 @@ export default function CouponsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
 
+  const [couponsEnabled, setCouponsEnabled] = useState(true);
+  const [toggleSaving, setToggleSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((d) => setCouponsEnabled(d?.couponsEnabled ?? true))
+      .catch(() => {});
+  }, []);
+
+  const toggleCouponsSection = async () => {
+    const next = !couponsEnabled;
+    setToggleSaving(true);
+    setCouponsEnabled(next);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ couponsEnabled: next }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(next ? "Discount code field is now shown at checkout" : "Discount code field is now hidden at checkout");
+    } catch {
+      setCouponsEnabled(!next);
+      toast.error("Could not update the setting");
+    } finally {
+      setToggleSaving(false);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     try {
@@ -191,7 +221,24 @@ export default function CouponsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold dark:text-white">Coupons</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold dark:text-white">Coupons</h1>
+        <div className="flex items-center gap-3 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-700">
+          <div>
+            <p className="text-sm font-medium dark:text-white">Show discount code at checkout</p>
+            <p className="text-xs text-neutral-500">Turn off to hide the &ldquo;Have a discount code?&rdquo; section</p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleCouponsSection}
+            disabled={toggleSaving}
+            aria-pressed={couponsEnabled}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${couponsEnabled ? "bg-black dark:bg-white" : "bg-neutral-300 dark:bg-neutral-600"}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-black ${couponsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+      </div>
 
       <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
         <h3 className="mb-3 font-semibold dark:text-white">

@@ -13,6 +13,7 @@ export async function GET() {
       storePhone: "",
       shippingCost: 200,
       freeShippingThreshold: 5000,
+      couponsEnabled: true,
       shippingNote: "",
       primaryColor: "#2563eb",
       announcementBar: false,
