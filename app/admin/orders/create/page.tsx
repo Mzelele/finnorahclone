@@ -64,7 +64,7 @@ export default function CreateOrderPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           shippingAddress: { fullName: form.fullName, phone: form.phone, email: form.email, address: form.address, city: form.city },
-          items: items.map((i) => ({ product: i.product._id, name: i.product.name, variant: i.variant, qty: i.qty, price: i.price })),
+          items: items.map((i) => ({ product: i.product._id, name: i.product.name, sku: i.product.sku || "", image: i.product.images?.[0] || "", quantity: i.qty, price: i.price })),
           total: subtotal,
           status: form.status,
           paymentStatus: form.paymentStatus,
@@ -146,7 +146,7 @@ export default function CreateOrderPage() {
           <div><Label>Payment Status</Label>
             <Select value={form.paymentStatus} onValueChange={v => setForm(f => ({...f, paymentStatus: v}))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{["unpaid","paid","refunded"].map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</SelectItem>)}</SelectContent>
+              <SelectContent>{["unpaid","collected"].map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
