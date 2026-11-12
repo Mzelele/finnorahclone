@@ -49,3 +49,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const db = await connectDB();
+    const body = await req.json();
+    const { ObjectId } = await import("mongodb");
+    const orderNumber = "ORD-" + Date.now();
+    const order = {
+      orderNumber,
+      shippingAddress: body.shippingAddress,
+      items: body.items,
+      total: body.total,
+      status: body.status || "pending",
+      paymentStatus: body.paymentStatus || "unpaid",
+      note: body.note || "",
+      source: body.source || "admin",
+      createdAt: new Date(),
+      statusHistory: [{ status: body.status || "pending", note: "Order created manually", changedAt: new Date() }],
+    };
+    const result = await db.collection("orders").insertOne(order);
+    return NextResponse.json({ _id: result.insertedId, orderNumber });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
