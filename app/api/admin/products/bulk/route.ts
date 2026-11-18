@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
@@ -41,6 +42,11 @@ export async function PUT(req: NextRequest) {
       { _id: { $in: objectIds } },
       updateDoc
     );
+
+    if (result.modifiedCount > 0) {
+      revalidateTag("products", "default");
+      revalidatePath("/");
+    }
 
     return NextResponse.json({
       message: `${result.modifiedCount} product(s) updated`,

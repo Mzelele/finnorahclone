@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 const slugify = (str: string) =>
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await db.collection("products").insertOne(toInsert);
+    revalidateTag("products", "default");
+    revalidatePath("/");
     return NextResponse.json({ ...toInsert, _id: result.insertedId }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

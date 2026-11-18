@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 async function detectBrand(title: string) {
@@ -158,7 +158,9 @@ export async function PUT(
     if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
     // Revalidate the storefront so changes reflect immediately without waiting
     // for the cache to expire — both the product detail page and the homepage.
-    revalidatePath(`/product/${body.slug || product.slug}`);
+    revalidateTag("products", "default");
+    revalidatePath(`/product/${existing.slug}`);
+    revalidatePath(`/product/${product.slug}`);
     revalidatePath("/");
     return NextResponse.json(product);
   } catch (error: any) {
@@ -181,6 +183,9 @@ export async function DELETE(
 
     if (permanent || existing.status === "archived") {
       await db.collection("products").deleteOne({ _id: new ObjectId(id) });
+      revalidateTag("products", "default");
+      revalidatePath(`/product/${existing.slug}`);
+      revalidatePath("/");
       return NextResponse.json({ message: "Product permanently deleted" });
     }
 
@@ -189,6 +194,9 @@ export async function DELETE(
       { $set: { status: "archived", updatedAt: new Date() } },
       { returnDocument: "after" }
     );
+    revalidateTag("products", "default");
+    revalidatePath(`/product/${existing.slug}`);
+    revalidatePath("/");
     return NextResponse.json({ message: "Product archived" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
