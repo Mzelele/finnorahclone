@@ -196,6 +196,7 @@ async function getProductsFromDB(params: {
   query?: string;
   sortKey?: string;
   reverse?: boolean;
+  includeTotal?: boolean;
 }) {
   const db = await connectDB();
   const searchTerm = params.search || params.query;
@@ -321,20 +322,30 @@ async function getProductsFromDB(params: {
       { $count: "total" },
     ];
 
-    const [aggregated, countResult] = await Promise.all([
-      db.collection("products").aggregate(pipeline).toArray(),
-      db.collection("products").aggregate(countPipeline).toArray(),
-    ]);
-    
-    docs = aggregated;
-    total = countResult[0]?.total || 0;
+    if (params.includeTotal === false) {
+      docs = await db.collection("products").aggregate(pipeline).toArray();
+      total = 0;
+    } else {
+      const [aggregated, countResult] = await Promise.all([
+        db.collection("products").aggregate(pipeline).toArray(),
+        db.collection("products").aggregate(countPipeline).toArray(),
+      ]);
+
+      docs = aggregated;
+      total = countResult[0]?.total || 0;
+    }
   } else {
-    const [found, count] = await Promise.all([
-      db.collection("products").find(query).sort(sort).skip(skip).limit(limit).toArray(),
-      db.collection("products").countDocuments(query),
-    ]);
-    docs = found;
-    total = count;
+    if (params.includeTotal === false) {
+      docs = await db.collection("products").find(query).sort(sort).skip(skip).limit(limit).toArray();
+      total = 0;
+    } else {
+      const [found, count] = await Promise.all([
+        db.collection("products").find(query).sort(sort).skip(skip).limit(limit).toArray(),
+        db.collection("products").countDocuments(query),
+      ]);
+      docs = found;
+      total = count;
+    }
   }
 
       return {
@@ -363,6 +374,7 @@ export async function getProducts(
     query?: string;
     sortKey?: string;
     reverse?: boolean;
+    includeTotal?: boolean;
   } = {},
 ) {
   return unstable_cache(

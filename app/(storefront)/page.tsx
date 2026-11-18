@@ -73,7 +73,7 @@ export default async function HomePage() {
   const initialData: Record<string, any> = {};
   await Promise.all(
     categories.map(async (cat) => {
-      const result = await getProducts({ category: cat.handle, limit: 6, page: 1 });
+      const result = await getProducts({ category: cat.handle, limit: 6, page: 1, includeTotal: false });
       initialData[cat.handle] = result;
     })
   );
